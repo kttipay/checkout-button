@@ -15,7 +15,7 @@ Drop-in **Split with Maytes** button. Add one `<script>` and a button renders th
 ### Script tag (CDN, recommended)
 
 ```html
-<script src="https://<cdn-host>/v1/checkout-button.js"
+<script src="https://js.maytes.co/v1/checkout-button.js"
         integrity="sha384-…"
         crossorigin="anonymous"></script>
 ```
@@ -77,7 +77,7 @@ Every [Release](https://github.com/kttipay/checkout-button/releases) attaches:
 To confirm a bundle you fetched matches a release:
 
 ```bash
-curl -s https://<cdn-host>/v1/checkout-button.js \
+curl -s https://js.maytes.co/v1/checkout-button.js \
   | openssl dgst -sha384 -binary | openssl base64 -A
 # compare the output against the sri value in CHANGELOG.md / integrity.json
 ```
