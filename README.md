@@ -12,15 +12,34 @@ Drop-in **Split with Maytes** button. Add one `<script>` and a button renders th
 
 ## Install
 
-### Script tag (CDN, recommended)
+### Script tag (CDN, production)
+
+Pin production to an exact release. The readable SemVer URL and the content-hash URL are two names for the **same release bytes** and share the **same SRI value** — pick either (`v0.1.0` / `795d508b` below are examples):
 
 ```html
-<script src="https://js.maytes.co/v1/checkout-button.js"
+<script src="https://js.maytes.co/v0.1.0/checkout-button.js"
         integrity="sha384-…"
         crossorigin="anonymous"></script>
 ```
 
-Copy the `integrity` value for your version from the matching [Release](https://github.com/kttipay/checkout-button/releases) or [`CHANGELOG.md`](./CHANGELOG.md). The `/v1/` path serves the latest 1.x build; to pin a bundle byte-for-byte, reference its immutable hashed filename instead (e.g. `checkout-button.795d508b.js`).
+```html
+<script src="https://js.maytes.co/checkout-button.795d508b.js"
+        integrity="sha384-…"
+        crossorigin="anonymous"></script>
+```
+
+Copy the `integrity` value for your version from the matching [Release](https://github.com/kttipay/checkout-button/releases) or [`CHANGELOG.md`](./CHANGELOG.md).
+
+### Script tag (development)
+
+For development and staging only, use the evergreen channel:
+
+```html
+<script src="https://js.maytes.co/dev/checkout-button.js"
+        crossorigin="anonymous"></script>
+```
+
+`/dev/` always serves the latest deployed SDK and is short-cached. Do not use it in production; it is not SRI-compatible because the bytes intentionally roll.
 
 ### npm
 
@@ -71,13 +90,14 @@ Via the script tag the same factory is the global `window.Maytes(...)`.
 Every [Release](https://github.com/kttipay/checkout-button/releases) attaches:
 
 - `checkout-button.js` / `.mjs` / `.cjs` — IIFE / ESM / CJS bundles
-- their immutable hashed filenames (e.g. `checkout-button.795d508b.js`)
+- readable immutable SemVer CDN links (e.g. `https://js.maytes.co/v0.1.0/checkout-button.js`)
+- immutable hashed CDN links (e.g. `https://js.maytes.co/checkout-button.795d508b.js`)
 - `integrity.json` — version, SHA-256, and SRI (`sha384-…`) for every bundle
 
 To confirm a bundle you fetched matches a release:
 
 ```bash
-curl -s https://js.maytes.co/v1/checkout-button.js \
+curl -s https://js.maytes.co/v0.1.0/checkout-button.js \
   | openssl dgst -sha384 -binary | openssl base64 -A
 # compare the output against the sri value in CHANGELOG.md / integrity.json
 ```
