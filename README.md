@@ -1,6 +1,6 @@
 # @maytes/checkout-button
 
-Drop-in **Split with Maytes** button. Add one `<script>` and a button renders that launches the Maytes-hosted checkout (popup on desktop, redirect on mobile) when clicked.
+Drop-in **Split with Maytes** button. Add one `<script>` and a button renders that launches the Maytes-hosted checkout when clicked. It redirects in the same window by default; `mode: 'popup'` opts desktop browsers into a centered popup, with automatic redirect fallback on mobile or when the popup is blocked.
 
 > **This is the public release mirror.** It carries the changelog, tagged [GitHub Releases](https://github.com/kttipay/checkout-button/releases), and the SRI-verified bundles for each version. The SDK source is developed in Maytes' private monorepo; only releases are mirrored here.
 
@@ -30,17 +30,6 @@ Pin production to an exact release. The readable SemVer URL and the content-hash
 
 Copy the `integrity` value for your version from the matching [Release](https://github.com/kttipay/checkout-button/releases) or [`CHANGELOG.md`](./CHANGELOG.md).
 
-### Script tag (development)
-
-For development and staging only, use the evergreen channel:
-
-```html
-<script src="https://js.maytes.co/dev/checkout-button.js"
-        crossorigin="anonymous"></script>
-```
-
-`/dev/` always serves the latest deployed SDK and is short-cached. Do not use it in production; it is not SRI-compatible because the bytes intentionally roll.
-
 ### npm
 
 ```bash
@@ -64,6 +53,9 @@ const maytes = Maytes({
 
 const cleanup = maytes.renderButton(document.getElementById('slot'), { block: true });
 
+// Optional popup mode (desktop; auto-falls back to redirect on mobile or when blocked):
+maytes.renderButton(document.getElementById('popup-slot'), { block: true, mode: 'popup' });
+
 // Imperative alternatives:
 maytes.redirectToCheckout({ checkoutId });
 const url = maytes.checkoutUrl({ checkoutId });
@@ -80,10 +72,14 @@ Via the script tag the same factory is the global `window.Maytes(...)`.
 | Method | Purpose |
 |---|---|
 | `Maytes(options)` | Create an SDK instance. `options.createCheckout` mints a checkout server-side; `options.environment` is `'sandbox'` or `'production'`. |
-| `renderButton(container, options?)` | Render the button into `container`; returns a cleanup function. |
+| `renderButton(container, options?)` | Render the button into `container`; returns a cleanup function. Options include `label`, `block`, and `mode: 'redirect' \| 'popup'`. |
 | `redirectToCheckout(options)` | Launch checkout directly (no button). |
 | `checkoutUrl(options)` | Build the hosted checkout URL. |
 | `destroy()` | Tear down the instance and its listeners. |
+
+## Mobile app
+
+After checkout, shoppers split the cost with friends using Maytes payment links (`app.maytes.co/…`). On a phone with the Maytes app installed, those links open directly in the app (iOS Universal Links / Android App Links); otherwise they open in the browser. Maytes handles this end to end — merchants integrate only the button and configure nothing for the app.
 
 ## Releases & integrity
 
