@@ -23,6 +23,7 @@ An optional second argument, `{ cspNonce }`, sets a nonce on the styles the SDK 
 | `openCheckout({ mode? })` | `Promise<OpenCheckoutResult>` | Starts the checkout from your own button, exactly as a click on the rendered button does. Call it inside your click handler, before any `await`. Resolves with how the launch ended and never rejects. See [Using your own button](https://github.com/kttipay/maytes-checkout-button/blob/main/docs/guides/own-button.md). |
 | `redirectToCheckout({ checkoutId, replace? })` | `void` | Sends the current tab to a checkout you already created, without a button. `replace: true` replaces the history entry. Inside an iframe it navigates the top-level window and throws `MaytesError` if the browser refuses. |
 | `instanceId` | `string` | Read-only id of this instance. Every `maytes:checkout-*` event carries it as `event.detail.instanceId`. |
+| `onBusyChange(listener)` | `() => void` | Calls `listener(true)` when a launch on this instance starts and `listener(false)` when it ends; returns a function that stops listening. Useful to disable your own Pay button. |
 | `checkoutUrl({ checkoutId })` | `string` | Builds the hosted checkout URL for a checkout you already created. |
 | `destroy()` | `void` | Tears down the instance: buttons, listeners, the overlay and a popup that hasn't loaded yet. Idempotent. |
 

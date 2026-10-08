@@ -46,4 +46,43 @@ export function SplitWithMaytesButton({ cartId }: { cartId: string }) {
 - **Reacting to the checkout.** To show your own message when the checkout can't open, add a [`maytes:checkout-*` event](https://github.com/kttipay/maytes-checkout-button/blob/main/docs/guides/events.md) listener in another `useEffect` and remove it in the cleanup.
 - Using Next.js? See the [Next.js guide](https://github.com/kttipay/maytes-checkout-button/blob/main/docs/guides/nextjs.md).
 
+## React bindings
+
+The package also ships React components at `@maytes/checkout-button/react`. They do the same as the component above, without writing it yourself:
+
+```tsx
+import { MaytesProvider, MaytesButton } from '@maytes/checkout-button/react';
+
+export function Checkout({ cartId }: { cartId: string }) {
+  return (
+    <MaytesProvider environment="sandbox" createCheckout={() => createCheckoutOnYourServer(cartId)}>
+      <MaytesButton block mode="popup" onFailed={(detail) => showMessage(detail.reason)} />
+    </MaytesProvider>
+  );
+}
+```
+
+`MaytesButton` takes the same options as `renderButton()` (`mode`, `label`, `block`, `radius`, `height`) plus `onOpened`, `onClosed`, `onRedirected` and `onFailed`. The callbacks fire only for launches started by a `MaytesButton` under the same provider.
+
+From your own button, for example a Stripe Payment Element where Split with Maytes is a custom payment method:
+
+```tsx
+import { useMaytes } from '@maytes/checkout-button/react';
+
+export function PayButton({ maytesSelected }: { maytesSelected: boolean }) {
+  const { openCheckout, busy } = useMaytes();
+  return (
+    <button disabled={busy} onClick={() => (maytesSelected ? openCheckout() : payWithStripe())}>
+      Pay
+    </button>
+  );
+}
+```
+
+Track `maytesSelected` from the Payment Element's `change` event (`event.value.type === '<your cpmt_ id>'`) and call `openCheckout()` inside the click, before any `await`, so the popup isn't blocked.
+
+- `createCheckout` can change on every render; the provider always calls the latest one and never re-creates the SDK. Changing `environment` replaces the instance.
+- Works with React 18 and 19, StrictMode and server rendering (Next.js); the entry is marked `"use client"`.
+- React is an optional peer dependency: the core and the CDN script don't include it.
+
 Next: [API reference](https://github.com/kttipay/maytes-checkout-button/blob/main/docs/guides/api.md) · [Troubleshooting](https://github.com/kttipay/maytes-checkout-button/blob/main/docs/guides/troubleshooting.md)

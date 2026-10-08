@@ -22,7 +22,9 @@
     "sourceMap": true,
     "outDir": "dist",
     "rootDir": "src",
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+    "jsx": "react-jsx",
+    "paths": { "@maytes/checkout-button": ["./src/index.ts"] }
   },
   "include": ["src/**/*"],
   "exclude": ["dist", "node_modules", "scripts"]

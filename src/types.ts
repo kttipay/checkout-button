@@ -78,6 +78,7 @@ export interface MaytesSDK {
   readonly instanceId: string;
   renderButton(container: HTMLElement, options?: RenderButtonOptions): RenderButtonCleanup;
   openCheckout(options?: OpenCheckoutOptions): Promise<OpenCheckoutResult>;
+  onBusyChange(listener: (busy: boolean) => void): () => void;
   redirectToCheckout(options: RedirectOptions): void;
   checkoutUrl(options: CheckoutUrlOptions): string;
   destroy(): void;
