@@ -25,6 +25,8 @@ export interface RenderButtonOptions {
   label?: string;
   block?: boolean;
   mode?: RenderButtonMode;
+  radius?: number;
+  height?: number;
 }
 
 export type RenderButtonCleanup = () => void;
