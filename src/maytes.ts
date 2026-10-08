@@ -1,4 +1,5 @@
-import { closePopupWindow, renderButton, stopPopupPoll } from './button.js';
+import { renderButton } from './button.js';
+import { closePopupWindow, stopPopupPoll } from './launch.js';
 import { isValidEnvironment } from './env.js';
 import { MaytesError, MaytesErrorCode } from './errors.js';
 import { hideOverlay } from './overlay.js';
