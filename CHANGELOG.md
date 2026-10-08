@@ -1,5 +1,53 @@
 # Changelog
 
+## 1.2.0
+
+### Minor Changes
+
+- [#28](https://github.com/kttipay/maytes-checkout-button/pull/28) [`a5c64cd`](https://github.com/kttipay/maytes-checkout-button/commit/a5c64cd13d095296c4c49eb3d9478f437802f9e3) Thanks [@kos-maytes](https://github.com/kos-maytes)! - `renderButton()` accepts `radius` and `height` so the Split with Maytes button can match an express-checkout row (for example 6px corners at 48px next to Apple Pay and Google Pay); a button with a `height` keeps its label on one line. Every `maytes:checkout-*` event now carries `detail.instanceId` and `detail.source` (`'button'` or `'api'`), and each instance exposes `maytes.instanceId`, so pages with several instances can tell their events apart. Existing event fields and the default button are unchanged: without `radius`/`height` the button renders exactly as in 1.1. Events that had no `detail` (`opened`, `closed`) now carry `{ instanceId, source }`. TypeScript code that hand-builds a `MaytesSDK` object needs the new `instanceId` member.
+
+- [#30](https://github.com/kttipay/maytes-checkout-button/pull/30) [`ac332b7`](https://github.com/kttipay/maytes-checkout-button/commit/ac332b7bf5d361166484e1b657a1a303e22192ef) Thanks [@kos-maytes](https://github.com/kos-maytes)! - Add `<maytes-checkout-button>`, a standard custom element for any front-end stack (plain HTML, Vue/Nuxt, Angular, Svelte/SvelteKit, Solid, React 19). Import `@maytes/checkout-button/element` or load `https://js.maytes.co/v1/checkout-button.element.js`; set `environment` and the other options as attributes and `createCheckout` as a property, and listen for `maytes-opened`, `maytes-closed`, `maytes-redirected` and `maytes-failed` on the element. `open()` starts the checkout from your own button. Configuration mistakes arrive as `maytes-failed` with `reason: 'config'` instead of throwing. `checkout-button.js`, `.mjs` and `.cjs` are unchanged.
+
+- [#26](https://github.com/kttipay/maytes-checkout-button/pull/26) [`92ef8c0`](https://github.com/kttipay/maytes-checkout-button/commit/92ef8c009fb74f7639be7e9cb1b2cd8d90a1c2ee) Thanks [@kos-maytes](https://github.com/kos-maytes)! - Add `openCheckout({ mode })` to start the Maytes checkout from the merchant's own button, with the same popup, loader, overlay, events and fallbacks as the rendered button. It resolves with the launch result (`popup`, `redirected`, `failed`, `closed` or `ignored`) and never rejects.
+
+  No change for existing integrations: the rendered button looks and behaves exactly as before. TypeScript code that builds its own `MaytesSDK` object (for example a test fake) needs the new `openCheckout` member.
+
+- [#29](https://github.com/kttipay/maytes-checkout-button/pull/29) [`c62fa53`](https://github.com/kttipay/maytes-checkout-button/commit/c62fa53eec701d71a84e67240ea86a6167aac4c0) Thanks [@kos-maytes](https://github.com/kos-maytes)! - Add React bindings at `@maytes/checkout-button/react` (`MaytesProvider`, `MaytesButton`, `useMaytes`) and `maytes.onBusyChange()`. React is an optional peer dependency (18 or 19); the CDN bundle is unchanged.
+
+- [#36](https://github.com/kttipay/maytes-checkout-button/pull/36) [`59adae5`](https://github.com/kttipay/maytes-checkout-button/commit/59adae5dfdb72eb15f6ab4ad0174b9ac693e593f) Thanks [@kos-maytes](https://github.com/kos-maytes)! - `<MaytesButton>` accepts `redirectOverlay`, like `renderButton()`: with it, a same-tab launch shows the Maytes loading overlay while the checkout is created. Off by default.
+
+- [#32](https://github.com/kttipay/maytes-checkout-button/pull/32) [`7634c62`](https://github.com/kttipay/maytes-checkout-button/commit/7634c62e007b56db63502322cd77fa553f7a14b5) Thanks [@kos-maytes](https://github.com/kos-maytes)! - Add an opt-in `redirectOverlay` option to `renderButton()` and `openCheckout()`: when the checkout opens in the same tab (redirect mode, phones, blocked popups), the Maytes loading overlay shows while the checkout is created and clears itself after a back-button return. Off by default, so existing integrations are unchanged.
+
+### Patch Changes
+
+- [#21](https://github.com/kttipay/maytes-checkout-button/pull/21) [`e87a44b`](https://github.com/kttipay/maytes-checkout-button/commit/e87a44b9649686048fa1e622831d601b8eeed71c) Thanks [@kos-maytes](https://github.com/kos-maytes)! - Fix the checkout button's busy-state spinner not reappearing after a customer's first checkout attempt on a given rendered button. The button now tracks its current icon (logo or spinner) by direct reference instead of re-querying the DOM by class name, so the spinner swap works correctly on every checkout attempt, not just the first.
+
+<!-- @hash-sri-start -->
+
+**SRI hashes** (use these in `<script integrity="..." crossorigin="anonymous">`):
+
+```
+checkout-button.js   sha384-gIQUOEPPO0H+Stb2Ffa40dFxBxGnB40p1+AHttEYor5oZiVKoM+aKagIL3GuNkG1
+checkout-button.mjs  sha384-sKFZzp1oSiijC45OFR04FOjFQfgvxawtUp+u/qXvRu5s5ZF8iMSTHaQo5g+VLJ79
+checkout-button.cjs  sha384-fkm1nIhsGYEjDw3uc4cjdxui4K8H4HuPnIQ379GP1Y7vtwFC/Dw3M85KopqvjRl1
+checkout-button.element.js  sha384-Y3aDrAucY25r7DzSkYJpsjoazd67oBy4WSxbTXBgpaWaT6TOuEOW3PidCw0PeVb9
+```
+
+**SemVer CDN links** (readable production pins; use with the SRI hashes above):
+
+- [checkout-button.js](https://js.maytes.co/v1.2.0/checkout-button.js)
+- [checkout-button.mjs](https://js.maytes.co/v1.2.0/checkout-button.mjs)
+- [checkout-button.cjs](https://js.maytes.co/v1.2.0/checkout-button.cjs)
+- [checkout-button.element.js](https://js.maytes.co/v1.2.0/checkout-button.element.js)
+
+**Hashed CDN links** (byte-level production pins; use with the SRI hashes above):
+
+- [checkout-button.c640180e.js](https://js.maytes.co/checkout-button.c640180e.js)
+- [checkout-button.d6e444ee.mjs](https://js.maytes.co/checkout-button.d6e444ee.mjs)
+- [checkout-button.d7bc9aea.cjs](https://js.maytes.co/checkout-button.d7bc9aea.cjs)
+- [checkout-button.element.6c530c24.js](https://js.maytes.co/checkout-button.element.6c530c24.js)
+
+<!-- @hash-sri-end -->
 ## 1.1.1
 
 ### Patch Changes
@@ -29,6 +77,7 @@ checkout-button.cjs  sha384-oSekYX0Re0jdMsBU6uzxUedTM+Cnl8uF5y0wmZmjUHngtzr8Sdze
 - [checkout-button.2aad12c3.cjs](https://js.maytes.co/checkout-button.2aad12c3.cjs)
 
 <!-- @hash-sri-end -->
+
 ## 1.1.0
 
 ### Minor Changes
