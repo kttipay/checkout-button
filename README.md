@@ -18,24 +18,55 @@
 
 ---
 
-Renders a button and launches the Maytes-hosted checkout in the top-level window. Default mode opens a centered popup on wide viewports, with a branded loader and automatic redirect fallback on phones or when the popup is blocked; `mode: 'redirect'` opts into a redirect always. Inside an iframe every redirect targets the top-level window.
+The button sits on your checkout page. When a shopper clicks it, it asks your server for a Maytes checkout and opens the Maytes-hosted checkout, where the shopper pays their share and invites friends to pay theirs. It works with any stack: a `<script>` tag or an npm import, with or without a framework.
 
 **📖 Full integration guide:** [developers.maytes.co/checkout-button](https://developers.maytes.co/checkout-button)
 
-- **Framework-agnostic** — same factory whether it's a `<script>` tag or `import { Maytes }`; no React/Vue/Angular binding to keep in sync.
+- **Any stack** — the same `Maytes()` factory from a `<script>` tag or `import { Maytes }`; [a guide per stack](#choose-your-setup) for plain HTML, bundlers, React, Next.js, Vue, Nuxt, Angular, Svelte and Solid.
 - **Zero runtime dependencies** — a small, dependency-free bundle; ESM/CJS ship unminified so your bundler can tree-shake it.
 - **CSP-safe by construction** — no `eval`, `Function`, or string-form timers; every release is scanned for it before shipping.
-- **Evergreen CDN by default** — the recommended `<script>` tag always serves the newest release; pin a SemVer or content-hash URL instead if you'd rather freeze on a tested build.
+- **Evergreen CDN by default** — the recommended `<script>` tag always serves the newest `1.x` release; pin a version with SRI if you'd rather freeze on a tested build.
 - **Signed provenance** — every npm release carries a [SLSA](https://slsa.dev) provenance attestation back to this repo's build.
 
 ## Contents
 
+- [How it works](#how-it-works)
+- [Choose your setup](#choose-your-setup)
 - [Install](#install)
-- [Usage](#usage)
 - [API](#api)
-- [Using your own button](#using-your-own-button)
+- [All guides](#all-guides)
 - [Mobile app](#mobile-app)
 - [Development](#development)
+
+## How it works
+
+1. **The shopper clicks "Split with Maytes".** The button calls the `createCheckout` function you pass to `Maytes()`.
+2. **Your server creates the checkout.** Your `createCheckout` calls your own endpoint, which creates a Maytes checkout with your API credentials and returns `{ checkoutId, checkoutUrl }`. Credentials never reach the browser.
+3. **The button opens the Maytes checkout.** On desktop it opens a popup with a Maytes loading screen while step 2 runs. On phones, when the popup is blocked, or with `mode: 'redirect'`, it opens in the same tab.
+4. **Your server takes the money.** When the shopper has paid, Maytes sends the `checkout.authorized` webhook; your server captures the checkout within 2 minutes. A successful capture is your "order paid" signal.
+5. **The shopper comes back** to the `return_url` you set when creating the checkout. In popup mode the checkout sends your page there and closes the popup.
+
+The button handles steps 1 and 3. Steps 2 and 4 are your server: see [Your server](docs/guides/server.md).
+
+<a id="usage"></a>
+
+## Choose your setup
+
+| Your checkout page is built with | Guide |
+|---|---|
+| Server-rendered HTML (PHP, Rails, Django, Laravel, WordPress, …) or any page without a bundler | [Quickstart: plain HTML](docs/guides/quickstart-html.md) |
+| Vite, webpack, esbuild or another bundler, no UI framework | [Quickstart: npm with a bundler](docs/guides/quickstart-npm.md) |
+| React (Vite, Create React App, Remix) | [React](docs/guides/react.md) |
+| Next.js | [Next.js](docs/guides/nextjs.md) |
+| Vue 3 or Nuxt 3 | [Vue 3 and Nuxt 3](docs/guides/vue-nuxt.md) |
+| Angular | [Angular](docs/guides/angular.md) |
+| Svelte or SvelteKit | [Svelte and SvelteKit](docs/guides/svelte.md) |
+| Solid or SolidStart | [Solid](docs/guides/solid.md) |
+| Stripe's Payment Element | [With Stripe's Payment Element](docs/guides/stripe-payment-element.md) |
+| Your own Pay button (Stripe, an express-checkout row, …) | [Using your own button](docs/guides/own-button.md) |
+| Your backend, in any language | [Your server](docs/guides/server.md) |
+
+Every guide is self-contained: the install step, a copy-paste example and what to read next.
 
 ## Install
 
@@ -88,87 +119,48 @@ Both URLs are the same release bytes with the same SRI value — pick either. Fu
 npm install @maytes/checkout-button
 ```
 
-## Usage
+ESM (`import`) and CommonJS (`require`) builds ship unminified with type declarations; your bundler minifies them. The reasoning behind the CDN channels is in [`docs/cdn-versioning.md`](./docs/cdn-versioning.md).
 
-`Maytes` is a callable factory (Stripe-style). Each call returns an isolated SDK instance.
+## API
+
+`Maytes` is a callable factory, like `Stripe()`. Each call returns an isolated instance.
 
 ```ts
 import { Maytes } from '@maytes/checkout-button';
 
 const maytes = Maytes({
-  createCheckout: async () => {
-    const res = await fetch('/api/maytes/create-checkout', { method: 'POST' });
-    return res.json(); // { checkoutId: string, checkoutUrl?: string }
-  },
   environment: 'sandbox',
+  createCheckout: async () => {
+    const res = await fetch('/api/maytes/checkout', { method: 'POST' });
+    if (!res.ok) throw new Error('Could not create the Maytes checkout');
+    return res.json(); // { checkoutId, checkoutUrl }
+  },
 });
 
-const cleanup = maytes.renderButton(document.getElementById('slot'), { block: true });
-
-// Opt into same-window redirect instead of the default popup:
-maytes.renderButton(document.getElementById('redirect-slot'), { block: true, mode: 'redirect' });
-
-// Imperative alternatives:
-maytes.redirectToCheckout({ checkoutId });
-const url = maytes.checkoutUrl({ checkoutId });
-
-// Teardown:
-cleanup();
-maytes.destroy();
+maytes.renderButton(document.getElementById('maytes-button')!, { block: true });
 ```
 
-Via the script tag, the same factory is available as the global `window.Maytes(...)`.
-
-## API
-
-| Method | Purpose |
+| Member | Purpose |
 |---|---|
-| `Maytes(options)` | Create an SDK instance. `options.createCheckout` mints a checkout server-side; `options.environment` selects the Maytes environment. |
-| `renderButton(container, options?)` | Render the button into `container`; returns a cleanup function. Options include `label`, `block`, and `mode: 'redirect' \| 'popup'` (default `'popup'`). |
-| `openCheckout(options?)` | Start the checkout from your own button, exactly as a click on the rendered button does. Call it inside your click handler. Option: `mode: 'redirect' \| 'popup'` (default `'popup'`). Resolves with how the launch ended; never rejects. |
-| `redirectToCheckout(options)` | Send the current tab to a checkout you have already created (no popup). |
-| `checkoutUrl(options)` | Build the hosted checkout URL. |
-| `destroy()` | Tear down the instance and its listeners — call this on unmount or when the instance's config/environment changes, not as a reaction to detecting payment success from your own polling (that can tear down a checkout that's still in progress). To remove a single button, use the cleanup function returned by `renderButton()` or hide/disable the button element instead. |
+| `Maytes({ createCheckout, environment })` | Creates an instance. `createCheckout` asks your server for `{ checkoutId, checkoutUrl? }`; `environment` is `'sandbox'` or `'production'`. |
+| `renderButton(container, { label, block, mode })` | Renders the button and returns a function that removes it. `mode` is `'popup'` (default) or `'redirect'`. |
+| `openCheckout({ mode })` | Starts the checkout from your own button, as a click on the rendered button does. See [Using your own button](docs/guides/own-button.md). |
+| `redirectToCheckout({ checkoutId, replace })` | Sends the current tab to a checkout you already created. |
+| `checkoutUrl({ checkoutId })` | Builds the hosted checkout URL. |
+| `destroy()` | Tears down the instance, its buttons, listeners and overlay. Call it on unmount. |
+| `maytes:checkout-opened` / `-closed` / `-redirected` / `-failed` | `CustomEvent`s on `document` describing what the button did. |
 
-### Inside an iframe?
+Full reference: [API](docs/guides/api.md) · [Events](docs/guides/events.md).
 
-The hosted checkout must run in the top-level window (its session cookie is refused inside a cross-site frame). If you render the button inside an iframe, the SDK navigates the top-level window; if the browser refuses, it opens a new tab; if both are refused it dispatches `maytes:checkout-failed` with `reason: 'navigation-blocked'`. When the checkout opens in a new tab, no popup poll starts and no `maytes:checkout-opened` / `maytes:checkout-closed` pair fires — you'll only see `maytes:checkout-redirected` with `target: 'tab'`. A sandboxed iframe needs `allow-scripts allow-same-origin allow-top-navigation` (plus `allow-popups allow-popups-to-escape-sandbox` for the tab fallback). Listen to `maytes:checkout-redirected` and read `event.detail.target` (`'self'`, `'top'` or `'tab'`) if your page needs to know where the checkout went. Rendering the button in the top-level page avoids all of this.
+## All guides
 
-## Using your own button
+- **Get started:** [plain HTML](docs/guides/quickstart-html.md) · [npm with a bundler](docs/guides/quickstart-npm.md) · [React](docs/guides/react.md) · [Next.js](docs/guides/nextjs.md) · [Vue 3 and Nuxt 3](docs/guides/vue-nuxt.md) · [Angular](docs/guides/angular.md) · [Svelte and SvelteKit](docs/guides/svelte.md) · [Solid](docs/guides/solid.md)
+- **Server and payments:** [Your server](docs/guides/server.md) · [With Stripe's Payment Element](docs/guides/stripe-payment-element.md) · [Using your own button](docs/guides/own-button.md)
+- **Reference:** [API](docs/guides/api.md) · [Events](docs/guides/events.md) · [Popup, redirect and iframes](docs/guides/launch-behaviour.md) · [Security and CSP](docs/guides/security-csp.md)
+- **Help:** [Troubleshooting](docs/guides/troubleshooting.md)
+- **Internals:** [Technical overview](docs/overview.md) · [CDN versioning decision record](docs/cdn-versioning.md)
 
-If your page already has its own Pay button — for example a Stripe Payment Element checkout that offers **Split with Maytes** as a Stripe custom payment method — start Maytes from that button with `openCheckout()`:
-
-```ts
-const maytes = Maytes({ createCheckout, environment: 'sandbox' });
-
-let maytesSelected = false;
-paymentElement.on('change', (event) => {
-  maytesSelected = event.value.type === MAYTES_CPM_ID;
-});
-
-payButton.addEventListener('click', async () => {
-  if (maytesSelected) {
-    const result = await maytes.openCheckout();
-    if (result.outcome === 'failed') showError('Could not start Split with Maytes. Please try again.');
-    return;
-  }
-  // ... your normal card flow
-});
-```
-
-**Call `openCheckout()` inside the click handler, before any `await`.** Browsers only allow a popup straight from a click: the SDK opens the window during the call and creates the checkout afterwards. Called later, the popup may be blocked; the SDK then redirects instead, so the payment still works.
-
-`openCheckout()` resolves with how the launch ended:
-
-| `outcome` | Meaning |
-|---|---|
-| `popup` | The popup loaded the Maytes checkout. |
-| `redirected` | The page (or the top window, or a new tab: `target`) went to the Maytes checkout. |
-| `failed` | `createCheckout` failed or returned the wrong shape, or every way out of an iframe was refused (`reason`, same as `maytes:checkout-failed`). |
-| `closed` | The customer closed the popup before the checkout loaded. |
-| `ignored` | A checkout launch from this instance was already in flight. |
-
-It never rejects. It throws `MaytesError` (`CONFIG`) synchronously on a destroyed instance or an invalid `mode`. Buttons rendered by the same instance ignore clicks while any launch is in flight.
+The same guides ship in the npm package under `docs/guides/` and are published on [developers.maytes.co](https://developers.maytes.co/checkout-button).
 
 ## Mobile app
 
@@ -184,7 +176,7 @@ npm run test:run
 npm run build        # bundles + SRI hashes + CSP scan
 ```
 
-Versioning and changelog are managed with [Changesets](./.changeset/README.md). Run `npm run changeset` with your PR. Brand colours are vendored, not hand-written — see [`RELEASING.md`](./RELEASING.md#brand-colours-come-from-the-design-foundation) for how that works.
+Versioning and changelog are managed with [Changesets](./.changeset/README.md). Run `npm run changeset` with your PR. Brand colours are vendored, not hand-written — see [`RELEASING.md`](./RELEASING.md#brand-colours-come-from-the-design-foundation) for how that works. Internals, the end-to-end sequence and behaviour contracts are in [`docs/overview.md`](./docs/overview.md).
 
 ## License
 

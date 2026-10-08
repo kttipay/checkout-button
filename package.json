@@ -43,6 +43,7 @@
   },
   "files": [
     "dist",
+    "docs/guides",
     "README.md",
     "CHANGELOG.md"
   ],

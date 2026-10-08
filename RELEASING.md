@@ -21,7 +21,7 @@ anything else; publish to **npm** for types/dev use, distribute at runtime as a
 | Version source of truth | `scripts/gen-version.mjs` + `prebuild` script | `src/version.ts` is **generated from `package.json`** so the version can't drift across the two files. |
 | CDN config | `scripts/cdn-config.mjs` | Emits `_headers`/`_redirects` (Cloudflare Pages + Netlify compatible): exact-path immutable cache for each SemVer/hash bundle pin (read from `integrity.json`), short cache for the `/dev/*` rolling alias, CORS, SRI-friendly. |
 | Package metadata | `package.json` | `publishConfig` (public + provenance), `repository`/`homepage`/`bugs`/`keywords`, `sideEffects`, Changesets scripts. |
-| npm landing | `README.md` | Install (CDN + npm), usage, API table. |
+| npm landing + merchant docs | `README.md`, `docs/guides/` | README is the hub (how it works, choose your setup, install and versioning, API summary); `docs/guides/` has one self-contained guide per stack and topic, shipped in the npm package. |
 
 ## Versioning & changelog
 
@@ -33,6 +33,21 @@ anything else; publish to **npm** for types/dev use, distribute at runtime as a
 ### CHANGELOG injection is gated on the release, not on `private`
 
 `hash-and-sri.mjs` writes `dist/integrity.json` on every build, but only touches `CHANGELOG.md` when a `## <version>` section for the current version **already exists** — which is true exactly when `changeset version` has just created it (the release script is `changeset version && npm run build`). Ordinary local/CI builds skip the CHANGELOG write entirely rather than inventing a spurious entry. The decision lives in `injectSriBlock` (`scripts/lib/changelog.mjs`), which returns `null` for "not a release build" and is covered by `src/test/changelog.test.ts`.
+
+## Docs
+
+- **Where they live.** This repository is the single source of truth for the browser SDK's documentation. `README.md` is the hub; the merchant guides are in `docs/guides/` (one self-contained file per stack or topic, with absolute links so they can be included elsewhere). `docs/overview.md` and `docs/cdn-versioning.md` cover internals and decisions.
+- **Every API change updates its guide in the same PR.** Adding, renaming or deprecating an option, method or event means updating `docs/guides/api.md` (and `events.md` or the affected stack guide) in that PR, not later.
+- **Examples can't drift.** `src/test/docs-examples.test.ts` type-checks every TypeScript, JavaScript, Vue and Svelte example in `README.md` and `docs/guides/` that uses the SDK against `src/index.ts`. A block that genuinely can't compile can be excluded with `<!-- typecheck: skip -->` on the line before its fence; keep that list short.
+- **developers.maytes.co includes, not copies.** `docs/guides/` ships in the npm package (`files` in `package.json`), and developers.maytes.co includes those pages from the published package, so the public docs always match a released version.
+
+## Deprecation policy
+
+1. **Mark it.** Add `@deprecated` with the replacement to the type in `src/types.ts`, and say so in the guide that documents it.
+2. **Warn once.** The SDK logs one `console.warn` per page load the first time the deprecated option, method or event is used, naming the replacement.
+3. **Record it.** The changeset adds a "Deprecated" entry to `CHANGELOG.md`.
+4. **Keep it working for the rest of the major.** A deprecated API keeps its behaviour for every remaining `1.x` release; the evergreen `/v1/` CDN channel never receives a breaking change.
+5. **Remove it only in the next major,** with a migration guide in `docs/guides/` and the `/v2/` channel.
 
 ## Brand colours come from the design foundation
 
@@ -57,7 +72,7 @@ The SDK's Maytes colours are vendored, not authored here. `foundation.lock.json`
 
 ## Merchant integration & environments
 
-Merchant-facing integration lives in [`README.md`](README.md) (script tag / npm, usage, API table) and the [full integration guide](https://staging-developers.maytes.co/checkout-button). Sandbox vs production is a **runtime `environment` flag** on the same bundle, not a separate build; the SDK CDN (`js.maytes.co`) is one host with pin-vs-roll — prod pins immutable SemVer or hashed URLs + SRI, staging/dev tracks the rolling `/dev` alias.
+Merchant-facing integration lives in [`README.md`](README.md) and [`docs/guides/`](docs/guides/) (per-stack guides, API, events) and the [full integration guide](https://developers.maytes.co/checkout-button). Sandbox vs production is a **runtime `environment` flag** on the same bundle, not a separate build; the SDK CDN (`js.maytes.co`) is one host: production merchants use the evergreen `/v1/` channel (recommended) or pin an immutable SemVer or hashed URL with SRI, and internal pre-merge testing tracks the rolling `/dev` alias.
 
 ## Verification performed
 

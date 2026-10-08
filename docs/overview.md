@@ -1,6 +1,6 @@
 # `@maytes/checkout-button` — Technical Overview
 
-> For the merchant-facing integration guide, see the [integration guide](https://developers.maytes.co/checkout-button) and [`README.md`](../README.md). This document covers internals.
+> Integrating the button? Start with the per-stack quickstarts in [`README.md`](../README.md#choose-your-setup) and the [integration guide](https://developers.maytes.co/checkout-button). This document covers internals: distribution, the end-to-end sequence, behaviour contracts and tests.
 
 ## Purpose
 
@@ -30,9 +30,9 @@ Each release is served from `https://js.maytes.co` under four URL forms:
 | SemVer pin | `/v<version>/checkout-button.js` | 1 yr | yes |
 | Content-hash pin | `/checkout-button.<8-char-sha256>.js` | 1 yr | yes |
 | Internal dev branch | `/dev/checkout-button.js` | no cache | no (bytes roll) |
-| Evergreen major (opt-in) | `/v<major>/checkout-button.js` | ~5 min | no (bytes roll) |
+| Evergreen major (recommended) | `/v<major>/checkout-button.js` | ~5 min | no (bytes roll) |
 
-Pin a SemVer or hashed URL for production and set `<script integrity="…">` for tamper protection; `/dev/` is internal-only, for pre-merge testing (see below). An opt-in `/v1/`-style evergreen major channel also exists for merchants who explicitly choose auto-updates over the pin-safety guarantee — see [`cdn-versioning.md`](./cdn-versioning.md) for the reasoning. `integrity.json` at the CDN root lists the version, hash, and SRI for every bundle; hashing, SRI generation, and CSP linting all run in `npm run build`.
+The evergreen major channel (`/v1/checkout-button.js`) is the recommended production URL: merchants get every `1.x` release without bumping a pin, at the cost of SRI. Merchants who would rather freeze on a tested build pin a SemVer or hashed URL and set `<script integrity="…">`. `/dev/` is internal-only, for pre-merge testing (see below). [`cdn-versioning.md`](./cdn-versioning.md) records the reasoning. `integrity.json` at the CDN root lists the version, hash, and SRI for every bundle; hashing, SRI generation, and CSP linting all run in `npm run build`.
 
 CDN plumbing: Cloudflare Pages project `checkout-button` (Maytes account). The release workflow deploys `dist/` via `wrangler pages deploy`. `scripts/cdn-config.mjs` emits `_headers` — the fixed global/security headers plus CORS and `/integrity.json` — and `_redirects`, which rewrites every release's SemVer and evergreen paths onto its hashed bundle. `Cache-Control` for the pins and the evergreen alias comes from Cloudflare Cache Rules, provisioned by `scripts/ensure-cdn-cache-rules.mjs`, not from `_headers`.
 
@@ -112,29 +112,33 @@ sequenceDiagram
 
   Shopper->>Button: Clicks "Split with Maytes"
   Button->>Button: aria-disabled = true, spinner shown
-  Button->>MerchantBE: createCheckout() (merchant-owned closure)
-  MerchantBE->>API: POST /api/merchant/v1/checkouts
-  API-->>MerchantBE: { checkout_uuid }
-  MerchantBE-->>Button: { checkoutId }
 
-  alt default mode (popup) on desktop
-    Button->>Popup: window.open("about:blank", "maytes-checkout-*", 500x800)
+  alt default mode (popup) on a wide viewport
+    Button->>Popup: window.open("about:blank", "maytes-checkout-*", 500x800), synchronously inside the click
     Button->>Popup: Paint branded loading screen
     Button->>Overlay: showModal() — dark backdrop, Maytes logo, "Completing checkout…"
     Button->>Page: dispatchEvent("maytes:checkout-opened")
-    Button->>Popup: popup.location.replace(hosted checkout URL)
     Note over Button,Popup: Button polls popup.closed every 500ms
+  end
 
+  Button->>MerchantBE: createCheckout() (merchant-owned closure)
+  MerchantBE->>API: POST /api/merchant/v1/checkouts
+  API-->>MerchantBE: { checkout_uuid, checkout_url }
+  MerchantBE-->>Button: { checkoutId, checkoutUrl? }
+
+  alt popup is open
+    Button->>Popup: popup.location.replace(hosted checkout URL)
     Shopper->>Popup: Shares with mates, allocates, pays
     Popup->>API: GET / POST checkout endpoints
     API-->>Popup: Order state
-    Popup-->>Shopper: Redirects popup to merchant return_url / cancel_url
-    Shopper->>Popup: Closes popup (or return_url page calls window.close())
-
-    Note over Button: Next poll detects popup.closed === true
-    Button->>Overlay: close() + remove from DOM
-    Button->>Button: aria-disabled removed
-    Button->>Page: dispatchEvent("maytes:checkout-closed")
+    Popup->>Page: Sends the merchant page (window.opener) to return_url / cancel_url with checkout_id, then closes itself
+    Note over Popup: With no usable opener, the popup navigates itself to return_url instead.
+    opt Shopper closes the popup before finishing
+      Note over Button: Next poll detects popup.closed === true
+      Button->>Overlay: close() + remove from DOM
+      Button->>Button: aria-disabled removed
+      Button->>Page: dispatchEvent("maytes:checkout-closed")
+    end
   else mode: "redirect", phone, or blocked popup
     Button->>Page: top-level navigation (window.top when framed, else the current window)
     Button->>Page: dispatchEvent("maytes:checkout-redirected", { url, target })
@@ -230,13 +234,13 @@ npm run test:coverage # single-shot with coverage thresholds enforced, used by C
 npm run typecheck     # tsc --noEmit
 ```
 
-Coverage — **251 tests across 18 files** (`src/test/`):
+Coverage — **264 tests across 19 files** (`src/test/`):
 
 | File | Tests | What it covers |
 |---|---|---|
 | `init.test.ts` | 10 | factory validation (`createCheckout` type, `environment` enum), internal `baseUrl` passthrough |
 | `button.test.ts` | 74 | render → click → closure → default popup launch (`about:blank` sync open, branded loader, `location.replace` navigation), explicit redirect mode, phone redirect fallback, blocked-popup redirect event, unique per-instance window name, busy gating, double-click suppression, destroy-mid-flight guard, listener detach on destroy, versioned style marker, immediate overlay clear on Escape, rejection / invalid-shape recovery, env → URL mapping, `baseUrl` override, popup-closed polling + overlay teardown, `maytes:checkout-*` events, cleanup/`destroy` idempotency, style refcounting, `cspNonce` presence/absence, `label` / `block` / `mode` props, multi-button concurrency, framed navigation (same-origin top window on a phone, popup sizing from the top window, cross-origin top window allowing navigation, a refused top navigation opening a new tab, both refused failing loudly and re-enabling the button), the busy spinner reappearing on every checkout attempt, not just the first |
-| `open-checkout.test.ts` | 18 | `openCheckout()`: blank popup opened during the call before `createCheckout`, popup navigation and `opened` event, `checkoutUrl` passthrough, phone and `redirect`-mode redirects, blocked-popup fallback, `failed` for rejection / invalid shape / refused iframe navigation (never rejects), `ignored` while a launch is in flight, CONFIG for a destroyed instance or invalid mode, `closed` when destroyed or the popup is closed before the checkout loads; one busy state per instance shared with rendered buttons |
+| `open-checkout.test.ts` | 18 | `openCheckout()`: blank popup opened during the call before `createCheckout`, popup navigation and `opened` event, `checkoutUrl` passthrough, phone and `redirect`-mode redirects, blocked-popup fallback, `failed` for rejection / invalid shape / refused iframe navigation (never rejects), `ignored` while a launch is in flight, CONFIG for a destroyed instance or invalid mode, `closed` when destroyed or the popup is closed before the checkout loads; while a launch is in flight every button on the instance and `openCheckout()` are gated, and only the clicked button shows the spinner |
 | `framing.test.ts` | 10 | `isFramed` / `sameOriginTop` / `viewportWidth` at top level and when framed, falling back to the screen width when the top window is cross-origin (and to the local width when the screen width is unknown), `navigateTopLevel` targeting the top window, opening a tab with `opener` severed when the top window refuses, reporting the refusal when both are blocked, rethrowing failures that aren't a `SecurityError`, recognising a `SecurityError` thrown from another realm as a top-window refusal or as a cross-origin top window |
 | `env.test.ts` | 24 | `isValidEnvironment` (positive, negative and non-string values via `it.each`, type-guard narrowing), `resolveBaseUrl` (sandbox / staging / production mapping, override precedence, empty-string override, defence-in-depth throw on unknown env) |
 | `state.test.ts` | 7 | popup-name generation (`crypto.randomUUID` + fallback), `createInstanceState` config passthrough and defaults |
@@ -253,12 +257,13 @@ Coverage — **251 tests across 18 files** (`src/test/`):
 | `semver-lite.test.ts` | 6 | unit-tests `compareVersions` (numeric major/minor/patch ordering) and `latestPerMajor` (highest version per major, order-independent) |
 | `readme.test.ts` | 5 | unit-tests `scripts/lib/readme.mjs`'s CDN-example injector: no-op when the markers are absent, replaces both example URLs, leaves the surrounding prose untouched, idempotent re-run, keeps the SRI placeholder as a literal ellipsis |
 | `foundation.test.ts` | 2 | vendored brand tokens (`src/foundation/brand.generated.ts`) match `foundation.lock.json`'s tag, every role the button uses is an opaque hex colour |
+| `docs-examples.test.ts` | 13 | type-checks every SDK example in `README.md` and `docs/guides/` (TypeScript, JavaScript and the `<script>` of Vue and Svelte blocks) against `src/index.ts`, with minimal framework stubs; a block can opt out with `<!-- typecheck: skip -->` |
 
 Run `npm run test:coverage` for a coverage report (thresholds: 90% lines/statements/functions, 85% branches — enforced in both `pr.yml` and `release.yml`).
 
 ### End-to-end testing
 
-Manual end-to-end verification against a real (sandbox) checkout requires a merchant backend that can mint one via the Maytes API — see [`create-checkout`](https://staging-developers.maytes.co/create-checkout) in the merchant docs. This repo's own unit tests (above) cover the button's behaviour in isolation with a stubbed `createCheckout`.
+Manual end-to-end verification against a real (sandbox) checkout requires a merchant backend that can mint one via the Maytes API — see [Create a checkout](https://developers.maytes.co/create-checkout) in the merchant docs. This repo's own unit tests (above) cover the button's behaviour in isolation with a stubbed `createCheckout`.
 
 ### CSP / integrity verification
 
