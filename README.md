@@ -22,7 +22,7 @@ The button sits on your checkout page. When a shopper clicks it, it asks your se
 
 **📖 Full integration guide:** [developers.maytes.co/checkout-button](https://developers.maytes.co/checkout-button)
 
-- **Any stack** — the same `Maytes()` factory from a `<script>` tag or `import { Maytes }`; copy-paste quickstarts below for plain HTML, bundlers, React, Next.js and Vue.
+- **Any stack** — the same `Maytes()` factory from a `<script>` tag or `import { Maytes }`; [a guide per stack](#choose-your-setup) for plain HTML, bundlers, React, Next.js, Vue, Nuxt, Angular, Svelte and Solid.
 - **Zero runtime dependencies** — a small, dependency-free bundle; ESM/CJS ship unminified so your bundler can tree-shake it.
 - **CSP-safe by construction** — no `eval`, `Function`, or string-form timers; every release is scanned for it before shipping.
 - **Evergreen CDN by default** — the recommended `<script>` tag always serves the newest `1.x` release; pin a version with SRI if you'd rather freeze on a tested build.
@@ -32,25 +32,10 @@ The button sits on your checkout page. When a shopper clicks it, it asks your se
 
 - [How it works](#how-it-works)
 - [Choose your setup](#choose-your-setup)
-- [Quickstarts](#quickstarts)
-  - [Plain HTML (script tag)](#plain-html-script-tag)
-  - [npm with a bundler](#npm-with-a-bundler)
-  - [React](#react)
-  - [Next.js](#nextjs)
-  - [Vue 3](#vue-3)
-  - [Nuxt 3](#nuxt-3)
-  - [Angular](#angular)
-  - [Svelte and SvelteKit](#svelte-and-sveltekit)
-  - [Solid](#solid)
-  - [Your server](#your-server)
+- [Install](#install)
 - [API](#api)
-- [Events](#events)
-- [Popup, redirect and iframes](#popup-redirect-and-iframes)
-- [With Stripe's Payment Element](#with-stripes-payment-element)
-- [Security and CSP](#security-and-csp)
-- [Install and versioning](#install)
+- [All guides](#all-guides)
 - [Mobile app](#mobile-app)
-- [Troubleshooting](#troubleshooting)
 - [Development](#development)
 
 ## How it works
@@ -61,463 +46,26 @@ The button sits on your checkout page. When a shopper clicks it, it asks your se
 4. **Your server takes the money.** When the shopper has paid, Maytes sends the `checkout.authorized` webhook; your server captures the checkout within 2 minutes. A successful capture is your "order paid" signal.
 5. **The shopper comes back** to the `return_url` you set when creating the checkout. In popup mode the checkout sends your page there and closes the popup.
 
-The button handles steps 1 and 3. Steps 2 and 4 are your server — see [Your server](#your-server).
-
-## Choose your setup
-
-| Your checkout page is built with | Start here |
-|---|---|
-| Server-rendered HTML (PHP, Rails, Django, Laravel, WordPress, …) or any page without a bundler | [Plain HTML (script tag)](#plain-html-script-tag) |
-| Vite, webpack, esbuild or another bundler, no UI framework | [npm with a bundler](#npm-with-a-bundler) |
-| React (Vite, Create React App, Remix) | [React](#react) |
-| Next.js | [Next.js](#nextjs) |
-| Vue 3 | [Vue 3](#vue-3) |
-| Nuxt 3 | [Nuxt 3](#nuxt-3) |
-| Angular | [Angular](#angular) |
-| Svelte or SvelteKit | [Svelte and SvelteKit](#svelte-and-sveltekit) |
-| Solid or SolidStart | [Solid](#solid) |
-| Stripe's Payment Element | [With Stripe's Payment Element](#with-stripes-payment-element) |
-| Your backend, in any language | [Your server](#your-server) |
+The button handles steps 1 and 3. Steps 2 and 4 are your server: see [Your server](docs/guides/server.md).
 
 <a id="usage"></a>
 
-## Quickstarts
-
-Every quickstart assumes your server exposes `POST /api/maytes/checkout`, which creates a Maytes checkout and returns `{ checkoutId, checkoutUrl }`. [Your server](#your-server) shows how to build it. Use `environment: 'sandbox'` with sandbox API credentials while you test, and `'production'` with production credentials when you go live.
-
-### Plain HTML (script tag)
-
-```html
-<div id="maytes-button"></div>
-
-<script src="https://js.maytes.co/v1/checkout-button.js" crossorigin="anonymous"></script>
-<script>
-  const maytes = window.Maytes({
-    environment: 'sandbox',
-    createCheckout: async () => {
-      const res = await fetch('/api/maytes/checkout', { method: 'POST' });
-      if (!res.ok) throw new Error('Could not create the Maytes checkout');
-      return res.json(); // { checkoutId, checkoutUrl }
-    },
-  });
-
-  maytes.renderButton(document.getElementById('maytes-button'), { block: true });
-</script>
-```
-
-The second script must run after the first, so keep them in this order (both without `async`). The CDN options, including pinned versions with SRI, are under [Install and versioning](#install).
-
-### npm with a bundler
-
-```bash
-npm install @maytes/checkout-button
-```
-
-```ts
-import { Maytes } from '@maytes/checkout-button';
-
-const maytes = Maytes({
-  environment: 'sandbox',
-  createCheckout: async () => {
-    const res = await fetch('/api/maytes/checkout', { method: 'POST' });
-    if (!res.ok) throw new Error('Could not create the Maytes checkout');
-    return res.json(); // { checkoutId, checkoutUrl }
-  },
-});
-
-const removeButton = maytes.renderButton(document.getElementById('maytes-button')!, { block: true });
-
-// When the checkout page goes away:
-// removeButton();      removes just this button
-// maytes.destroy();    tears down the instance, its buttons and any open popup
-```
-
-TypeScript types ship with the package (`MaytesSDK`, `MaytesOptions`, `RenderButtonOptions`, the event detail types and more).
-
-### React
-
-Create the instance once per mount, read the latest cart through a ref, and destroy it on unmount. This is safe under React's StrictMode, which mounts effects twice in development.
-
-```tsx
-import { useEffect, useRef } from 'react';
-import { Maytes } from '@maytes/checkout-button';
-
-export function SplitWithMaytesButton({ cartId }: { cartId: string }) {
-  const slotRef = useRef<HTMLDivElement>(null);
-  const cartIdRef = useRef(cartId);
-
-  useEffect(() => {
-    cartIdRef.current = cartId;
-  }, [cartId]);
-
-  useEffect(() => {
-    const maytes = Maytes({
-      environment: 'sandbox',
-      createCheckout: async () => {
-        const res = await fetch('/api/maytes/checkout', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ cartId: cartIdRef.current }),
-        });
-        if (!res.ok) throw new Error('Could not create the Maytes checkout');
-        return res.json(); // { checkoutId, checkoutUrl }
-      },
-    });
-    maytes.renderButton(slotRef.current!, { block: true });
-    return () => maytes.destroy();
-  }, []);
-
-  return <div ref={slotRef} />;
-}
-```
-
-- `createCheckout` runs on click, so it reads `cartIdRef.current` rather than closing over the first render's `cartId`. The button is not rebuilt when the cart changes.
-- To react to the checkout (for example to show your own message when it fails), add a [`maytes:checkout-*` event](#events) listener in another `useEffect` and remove it in the cleanup.
-
-### Next.js
-
-Use a client component. The package doesn't touch `window` when it's imported, so it is safe in server-rendered pages; the button is created in `useEffect`, which only runs in the browser.
-
-```tsx
-'use client';
-
-import { useEffect, useRef } from 'react';
-import { Maytes } from '@maytes/checkout-button';
-
-export default function SplitWithMaytesButton({ cartId }: { cartId: string }) {
-  const slotRef = useRef<HTMLDivElement>(null);
-  const cartIdRef = useRef(cartId);
-
-  useEffect(() => {
-    cartIdRef.current = cartId;
-  }, [cartId]);
-
-  useEffect(() => {
-    const maytes = Maytes({
-      environment: process.env.NEXT_PUBLIC_MAYTES_ENVIRONMENT === 'production' ? 'production' : 'sandbox',
-      createCheckout: async () => {
-        const res = await fetch('/api/maytes/checkout', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ cartId: cartIdRef.current }),
-        });
-        if (!res.ok) throw new Error('Could not create the Maytes checkout');
-        return res.json(); // { checkoutId, checkoutUrl }
-      },
-    });
-    maytes.renderButton(slotRef.current!, { block: true });
-    return () => maytes.destroy();
-  }, []);
-
-  return <div ref={slotRef} />;
-}
-```
-
-Put the server half in a Route Handler (`app/api/maytes/checkout/route.ts`) so your Maytes credentials stay on the server; [Your server](#your-server) has the code. Prefer the CDN? Load it with `next/script` (`<Script src="https://js.maytes.co/v1/checkout-button.js" strategy="afterInteractive" onReady={…} />`) and call `window.Maytes(…)` in `onReady` instead of importing.
-
-### Vue 3
-
-```vue
-<script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue';
-import { Maytes, type MaytesSDK } from '@maytes/checkout-button';
-
-const props = defineProps<{ cartId: string }>();
-const slot = ref<HTMLDivElement | null>(null);
-let maytes: MaytesSDK | null = null;
-
-onMounted(() => {
-  maytes = Maytes({
-    environment: 'sandbox',
-    createCheckout: async () => {
-      const res = await fetch('/api/maytes/checkout', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ cartId: props.cartId }),
-      });
-      if (!res.ok) throw new Error('Could not create the Maytes checkout');
-      return res.json(); // { checkoutId, checkoutUrl }
-    },
-  });
-  maytes.renderButton(slot.value!, { block: true });
-});
-
-onBeforeUnmount(() => maytes?.destroy());
-</script>
-
-<template>
-  <div ref="slot" />
-</template>
-```
-
-`props.cartId` is read when the shopper clicks, so it is always the latest value.
-
-### Nuxt 3
-
-Use the [Vue 3](#vue-3) component as it is. `onMounted` only runs in the browser and the package doesn't touch `window` when it's imported, so server rendering is safe. Save it as `components/SplitWithMaytesButton.client.vue` (the `.client` suffix renders it only in the browser), or wrap it in `<ClientOnly>`:
-
-```vue
-<template>
-  <ClientOnly>
-    <SplitWithMaytesButton :cart-id="cart.id" />
-  </ClientOnly>
-</template>
-```
-
-Put the server half in a server route such as `server/api/maytes/checkout.post.ts`; [Your server](#your-server) shows what it must return.
-
-### Angular
-
-```ts
-import { AfterViewInit, Component, ElementRef, Input, OnDestroy, PLATFORM_ID, ViewChild, inject } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
-import { Maytes, type MaytesSDK } from '@maytes/checkout-button';
-
-@Component({
-  selector: 'app-split-with-maytes',
-  standalone: true,
-  template: '<div #slot></div>',
-})
-export class SplitWithMaytesComponent implements AfterViewInit, OnDestroy {
-  @Input({ required: true }) cartId!: string;
-  @ViewChild('slot', { static: true }) slot!: ElementRef<HTMLDivElement>;
-
-  private readonly platformId = inject(PLATFORM_ID);
-  private maytes: MaytesSDK | null = null;
-
-  ngAfterViewInit(): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-    this.maytes = Maytes({
-      environment: 'sandbox',
-      createCheckout: async () => {
-        const res = await fetch('/api/maytes/checkout', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ cartId: this.cartId }),
-        });
-        if (!res.ok) throw new Error('Could not create the Maytes checkout');
-        return res.json(); // { checkoutId, checkoutUrl }
-      },
-    });
-    this.maytes.renderButton(this.slot.nativeElement, { block: true });
-  }
-
-  ngOnDestroy(): void {
-    this.maytes?.destroy();
-  }
-}
-```
-
-The `isPlatformBrowser` check keeps the button out of Angular's server-side rendering; without SSR it is always true. `this.cartId` is read when the shopper clicks.
-
-### Svelte and SvelteKit
-
-```svelte
-<script lang="ts">
-  import { onMount } from 'svelte';
-  import { Maytes } from '@maytes/checkout-button';
-
-  let { cartId }: { cartId: string } = $props();
-  let slot: HTMLDivElement;
-
-  onMount(() => {
-    const maytes = Maytes({
-      environment: 'sandbox',
-      createCheckout: async () => {
-        const res = await fetch('/api/maytes/checkout', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ cartId }),
-        });
-        if (!res.ok) throw new Error('Could not create the Maytes checkout');
-        return res.json(); // { checkoutId, checkoutUrl }
-      },
-    });
-    maytes.renderButton(slot, { block: true });
-    return () => maytes.destroy();
-  });
-</script>
-
-<div bind:this={slot}></div>
-```
-
-This is Svelte 5; on Svelte 4 replace the `$props()` line with `export let cartId: string;`. `onMount` only runs in the browser, so it works in SvelteKit pages as they are. Put the server half in `src/routes/api/maytes/checkout/+server.ts`.
-
-### Solid
-
-```tsx
-import { onCleanup, onMount } from 'solid-js';
-import { Maytes } from '@maytes/checkout-button';
-
-export function SplitWithMaytesButton(props: { cartId: string }) {
-  let slot!: HTMLDivElement;
-
-  onMount(() => {
-    const maytes = Maytes({
-      environment: 'sandbox',
-      createCheckout: async () => {
-        const res = await fetch('/api/maytes/checkout', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ cartId: props.cartId }),
-        });
-        if (!res.ok) throw new Error('Could not create the Maytes checkout');
-        return res.json(); // { checkoutId, checkoutUrl }
-      },
-    });
-    maytes.renderButton(slot, { block: true });
-    onCleanup(() => maytes.destroy());
-  });
-
-  return <div ref={slot} />;
-}
-```
-
-`onMount` only runs in the browser, so this also works with SolidStart's server rendering. `props.cartId` is read when the shopper clicks.
-
-### Your server
-
-Your endpoint creates the checkout with the [Maytes merchant API](https://developers.maytes.co/create-checkout) and returns two fields to the browser:
-
-```json
-{ "checkoutId": "019fbb9e-ecd1-7059-99f3-f8bf47b63931", "checkoutUrl": "https://sandbox-checkout.maytes.co/?id=019fbb9e-ecd1-7059-99f3-f8bf47b63931" }
-```
-
-- `checkoutId` is required. `checkoutUrl` is optional, but return it: the button then opens exactly the URL Maytes gave you.
-- The merchant API answers in snake_case (`checkout_uuid`, `checkout_url`). Map them to `checkoutId` and `checkoutUrl`; anything else makes the button report `invalid-shape`.
-- Price the cart on your server. Send a cart or order reference from the browser, never a total.
-
-Node.js with Express and the Maytes backend SDK (`npm install @maytes/api-client-js`; SDKs for Python, PHP, Go, Java, Ruby and .NET are on [developers.maytes.co](https://developers.maytes.co/build-your-integration)):
-
-```ts
-import express from 'express';
-import { createMaytesApiClient } from '@maytes/api-client-js';
-
-const maytesApi = createMaytesApiClient({
-  endpoint: 'https://sandbox-api.maytes.co',   // https://api.maytes.co in production
-  clientId: process.env.MAYTES_CLIENT_ID!,
-  clientSecret: process.env.MAYTES_CLIENT_SECRET!,
-});
-
-const app = express();
-app.use(express.json());
-
-app.post('/api/maytes/checkout', async (req, res) => {
-  const cart = await loadCart(req.body.cartId);                // your catalogue, your prices
-  const merchantOrderId = await createPendingOrder(cart);
-
-  const created = await maytesApi.createCheckout({
-    createCheckoutRequest: {
-      merchantOrderId,
-      totalAmount: cart.total,                                 // minor units: 4500 = AUD 45.00
-      currency: 'AUD',
-      returnUrl: `https://shop.example.com/thanks?order=${merchantOrderId}`,
-      cancelUrl: 'https://shop.example.com/cart',
-      items: cart.lines.map((line) => ({
-        itemRef: line.sku,
-        name: line.name,
-        quantity: line.quantity,
-        unitPrice: line.unitPrice,
-        currency: 'AUD',
-        category: 'other',
-      })),
-    },
-  });
-
-  await saveCheckoutId(merchantOrderId, created.data.checkoutUuid);
-  res.json({ checkoutId: created.data.checkoutUuid, checkoutUrl: created.data.checkoutUrl });
-});
-```
-
-Then finish the server side on developers.maytes.co:
-
-- [Webhooks](https://developers.maytes.co/webhooks): subscribe to `checkout.authorized` and verify the `X-Maytes-Signature` header.
-- [Capture and checkout status](https://developers.maytes.co/capture-and-status): capture within 2 minutes of `checkout.authorized`, or the hold is voided.
-- Match environments: sandbox credentials only work against `https://sandbox-api.maytes.co`, and the browser's `environment` should be `'sandbox'` while you use them.
-
-## API
-
-`Maytes` is a callable factory, like `Stripe()`. Each call returns an isolated instance. From the script tag it is `window.Maytes`; from npm it is `import { Maytes } from '@maytes/checkout-button'`.
-
-### `Maytes(options)`
-
-| Option | Type | Description |
-|---|---|---|
-| `createCheckout` | `() => Promise<{ checkoutId: string; checkoutUrl?: string }>` | Required. Called when the shopper clicks; asks your server for a checkout. Throw (or reject) to report a failure. |
-| `environment` | `'sandbox' \| 'production'` | Required. Which Maytes environment the checkout opens in when you don't return `checkoutUrl`: `sandbox` → `https://sandbox-checkout.maytes.co`, `production` → `https://checkout.maytes.co`. |
-
-Returns a `MaytesSDK` instance with the methods below. Invalid options throw `MaytesError` with `code: 'CONFIG'`.
-
-### Instance methods
-
-| Method | Returns | Description |
-|---|---|---|
-| `renderButton(container, options?)` | `() => void` | Renders the button into `container` (an `HTMLElement`) and returns a function that removes it. |
-| `redirectToCheckout({ checkoutId, replace? })` | `void` | Sends the current tab to a checkout you already created, without a button. `replace: true` replaces the history entry. Inside an iframe it navigates the top-level window and throws `MaytesError` if the browser refuses. |
-| `checkoutUrl({ checkoutId })` | `string` | Builds the hosted checkout URL for a checkout you already created. |
-| `destroy()` | `void` | Tears down the instance: buttons, listeners, the overlay and a popup that hasn't loaded yet. Idempotent. |
-
-Call `destroy()` when the page or component goes away, or when you need an instance with a different `environment`. Don't call it because your own code saw the payment succeed: that can tear down a checkout that's still in progress. To remove one button, call the function `renderButton()` returned.
-
-### `renderButton` options
-
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `label` | `string` | `'Split with'` | Text before the Maytes logo. The accessible name is `"<label> Maytes"`. |
-| `block` | `boolean` | `false` | `true` makes the button fill the width of its container. |
-| `mode` | `'popup' \| 'redirect'` | `'popup'` | `'popup'` opens a centred window on desktop and falls back to the same tab on phones or when the popup is blocked. `'redirect'` always uses the same tab. |
-
-Two buttons rendered from one instance share one checkout at a time: clicks are ignored while that instance's `createCheckout` is running.
-
-## Events
-
-The button reports what happened with `CustomEvent`s on `document`. Use them for your own UI; your webhook and capture remain the source of truth for payment.
-
-| Event | When | `event.detail` |
-|---|---|---|
-| `maytes:checkout-opened` | The popup opened. | — |
-| `maytes:checkout-closed` | The popup was closed while your page was still open, usually by the shopper. (When the checkout finishes, it sends your page to your `return_url` instead.) | — |
-| `maytes:checkout-redirected` | The checkout opened without a popup. | `{ url, target }`, where `target` is `'self'` (this tab), `'top'` (the page around your iframe) or `'tab'` (a new tab) |
-| `maytes:checkout-failed` | The checkout could not open. | `{ reason, cause? }`, where `reason` is `'create-checkout-rejected'`, `'invalid-shape'` or `'navigation-blocked'` |
-
-```ts
-import type { CheckoutFailedDetail } from '@maytes/checkout-button';
-
-document.addEventListener('maytes:checkout-failed', (event) => {
-  const { reason } = (event as CustomEvent<CheckoutFailedDetail>).detail;
-  showMessage(reason === 'create-checkout-rejected'
-    ? 'We could not start Split with Maytes. Please try again.'
-    : 'Split with Maytes is unavailable right now.');
-});
-```
-
-There are no completion callbacks by design: in redirect mode your page is gone before the checkout finishes, and the hosted checkout returns the shopper to your `return_url`.
-
-## Popup, redirect and iframes
-
-- **Desktop, `mode: 'popup'` (default):** the button opens a 500 × 800 window immediately on click, shows a Maytes loading screen in it, and covers your page with a dimmed "Completing checkout with Maytes…" overlay that has a "Return to Maytes" button. Once `createCheckout` resolves, the window loads the checkout. Pressing Esc closes the popup.
-- **Phones (viewport 600px wide or less):** the same tab, even in popup mode.
-- **Popup blocked:** the same tab. This is a normal outcome, reported with `maytes:checkout-redirected`, not `failed`.
-- **`mode: 'redirect'`:** always the same tab.
-
-### Inside an iframe
-
-The hosted checkout must run in the top-level window, because its session cookie is refused inside a cross-site frame. If you render the button inside an iframe, the SDK navigates the top-level window; if the browser refuses, it opens a new tab; if both are refused it dispatches `maytes:checkout-failed` with `reason: 'navigation-blocked'`. When the checkout opens in a new tab, no popup poll starts and no `maytes:checkout-opened` / `maytes:checkout-closed` pair fires — you'll only see `maytes:checkout-redirected` with `target: 'tab'`. A sandboxed iframe needs `allow-scripts allow-same-origin allow-top-navigation` (plus `allow-popups allow-popups-to-escape-sandbox` for the tab fallback). Listen to `maytes:checkout-redirected` and read `event.detail.target` (`'self'`, `'top'` or `'tab'`) if your page needs to know where the checkout went. Rendering the button in the top-level page avoids all of this.
-
-## With Stripe's Payment Element
-
-If your checkout already uses Stripe's Payment Element, you can offer Split with Maytes inside it as a Stripe custom payment method. The guide is at [developers.maytes.co/stripe](https://developers.maytes.co/stripe): the Payment Element shows the option, `elements.submit()` tells you it was picked, and your page sends the shopper to the `checkoutUrl` your server returns. You can also place this button beside the Stripe form; it works the same as on any other page.
-
-## Security and CSP
-
-- **Keep credentials on your server.** The browser only ever sees `checkoutId` and `checkoutUrl`. Treat `checkoutId` like a magic link: it identifies the shopper's checkout session.
-- **Scripts:** allow the CDN with `Content-Security-Policy: script-src 'self' https://js.maytes.co;`. With a pinned URL you can also add `integrity` (SRI); see [Install and versioning](#install).
-- **Styles:** the button injects a `<style>` tag. On a strict `style-src` policy, pass your nonce as the second argument so it's set on every style tag the SDK adds:
-
-  ```ts
-  const maytes = Maytes({ createCheckout, environment: 'production' }, { cspNonce: 'your-nonce' });
-  ```
-- The bundle uses no `eval`, `Function` or string timers, so `'unsafe-eval'` is never needed.
+## Choose your setup
+
+| Your checkout page is built with | Guide |
+|---|---|
+| Server-rendered HTML (PHP, Rails, Django, Laravel, WordPress, …) or any page without a bundler | [Quickstart: plain HTML](docs/guides/quickstart-html.md) |
+| Vite, webpack, esbuild or another bundler, no UI framework | [Quickstart: npm with a bundler](docs/guides/quickstart-npm.md) |
+| React (Vite, Create React App, Remix) | [React](docs/guides/react.md) |
+| Next.js | [Next.js](docs/guides/nextjs.md) |
+| Vue 3 or Nuxt 3 | [Vue 3 and Nuxt 3](docs/guides/vue-nuxt.md) |
+| Angular | [Angular](docs/guides/angular.md) |
+| Svelte or SvelteKit | [Svelte and SvelteKit](docs/guides/svelte.md) |
+| Solid or SolidStart | [Solid](docs/guides/solid.md) |
+| Stripe's Payment Element | [With Stripe's Payment Element](docs/guides/stripe-payment-element.md) |
+| Your backend, in any language | [Your server](docs/guides/server.md) |
+
+Every guide is self-contained: the install step, a copy-paste example and what to read next.
 
 ## Install
 
@@ -572,21 +120,49 @@ npm install @maytes/checkout-button
 
 ESM (`import`) and CommonJS (`require`) builds ship unminified with type declarations; your bundler minifies them. The reasoning behind the CDN channels is in [`docs/cdn-versioning.md`](./docs/cdn-versioning.md).
 
+## API
+
+`Maytes` is a callable factory, like `Stripe()`. Each call returns an isolated instance.
+
+```ts
+import { Maytes } from '@maytes/checkout-button';
+
+const maytes = Maytes({
+  environment: 'sandbox',
+  createCheckout: async () => {
+    const res = await fetch('/api/maytes/checkout', { method: 'POST' });
+    if (!res.ok) throw new Error('Could not create the Maytes checkout');
+    return res.json(); // { checkoutId, checkoutUrl }
+  },
+});
+
+maytes.renderButton(document.getElementById('maytes-button')!, { block: true });
+```
+
+| Member | Purpose |
+|---|---|
+| `Maytes({ createCheckout, environment })` | Creates an instance. `createCheckout` asks your server for `{ checkoutId, checkoutUrl? }`; `environment` is `'sandbox'` or `'production'`. |
+| `renderButton(container, { label, block, mode })` | Renders the button and returns a function that removes it. `mode` is `'popup'` (default) or `'redirect'`. |
+| `redirectToCheckout({ checkoutId, replace })` | Sends the current tab to a checkout you already created. |
+| `checkoutUrl({ checkoutId })` | Builds the hosted checkout URL. |
+| `destroy()` | Tears down the instance, its buttons, listeners and overlay. Call it on unmount. |
+| `maytes:checkout-opened` / `-closed` / `-redirected` / `-failed` | `CustomEvent`s on `document` describing what the button did. |
+
+Full reference: [API](docs/guides/api.md) · [Events](docs/guides/events.md).
+
+## All guides
+
+- **Get started:** [plain HTML](docs/guides/quickstart-html.md) · [npm with a bundler](docs/guides/quickstart-npm.md) · [React](docs/guides/react.md) · [Next.js](docs/guides/nextjs.md) · [Vue 3 and Nuxt 3](docs/guides/vue-nuxt.md) · [Angular](docs/guides/angular.md) · [Svelte and SvelteKit](docs/guides/svelte.md) · [Solid](docs/guides/solid.md)
+- **Server and payments:** [Your server](docs/guides/server.md) · [With Stripe's Payment Element](docs/guides/stripe-payment-element.md)
+- **Reference:** [API](docs/guides/api.md) · [Events](docs/guides/events.md) · [Popup, redirect and iframes](docs/guides/launch-behaviour.md) · [Security and CSP](docs/guides/security-csp.md)
+- **Help:** [Troubleshooting](docs/guides/troubleshooting.md)
+- **Internals:** [Technical overview](docs/overview.md) · [CDN versioning decision record](docs/cdn-versioning.md)
+
+The same guides ship in the npm package under `docs/guides/` and are published on [developers.maytes.co](https://developers.maytes.co/checkout-button).
+
 ## Mobile app
 
 After checkout, shoppers split the cost with friends using Maytes payment links (`app.maytes.co/…`). On a phone with the Maytes app installed, those links open directly in the app (iOS Universal Links / Android App Links); otherwise they open in the browser. Maytes handles this end to end — merchants integrate only the button and configure nothing for the app.
-
-## Troubleshooting
-
-| What you see | What it means |
-|---|---|
-| `window.Maytes is undefined` or `Maytes is not a function` | The CDN script hasn't loaded when your code runs. Put your code after the `<script src="https://js.maytes.co/…">` tag (not `async`), or run it from that script's `load` event. Check that your CSP allows `https://js.maytes.co`. |
-| No button appears | `renderButton` needs an existing `HTMLElement`; a missing element throws `MaytesError` (`CONFIG`) in the console. Render after the container exists (for example in `useEffect` or `onMounted`). |
-| The checkout opened in the same tab instead of a popup | Expected on phones (600px wide or less) and when the browser blocks the popup; `maytes:checkout-redirected` fires. |
-| The spinner shows, then the button resets | `createCheckout` failed: `maytes:checkout-failed` with `create-checkout-rejected` (your request threw or rejected) or `invalid-shape` (it didn't return `{ checkoutId }`). The console has the error. A common cause is returning the API's `checkout_uuid` instead of `checkoutId`. |
-| The checkout says it can't be found | The checkout was created in one environment and opened in the other. Return `checkoutUrl` from your server, and use sandbox credentials with `environment: 'sandbox'`. |
-| CSP errors about inline styles | Pass `{ cspNonce }` as the second argument to `Maytes()`; see [Security and CSP](#security-and-csp). |
-| Inside an iframe, nothing happens and `navigation-blocked` fires | The browser refused both the top-level navigation and a new tab. Add `allow-top-navigation` (and `allow-popups allow-popups-to-escape-sandbox`) to the iframe's `sandbox`, or render the button in the top-level page. |
 
 ## Development
 

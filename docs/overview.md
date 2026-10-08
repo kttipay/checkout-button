@@ -234,7 +234,7 @@ npm run test:coverage # single-shot with coverage thresholds enforced, used by C
 npm run typecheck     # tsc --noEmit
 ```
 
-Coverage — **251 tests across 18 files** (`src/test/`):
+Coverage — **264 tests across 19 files** (`src/test/`):
 
 | File | Tests | What it covers |
 |---|---|---|
@@ -257,6 +257,7 @@ Coverage — **251 tests across 18 files** (`src/test/`):
 | `semver-lite.test.ts` | 6 | unit-tests `compareVersions` (numeric major/minor/patch ordering) and `latestPerMajor` (highest version per major, order-independent) |
 | `readme.test.ts` | 5 | unit-tests `scripts/lib/readme.mjs`'s CDN-example injector: no-op when the markers are absent, replaces both example URLs, leaves the surrounding prose untouched, idempotent re-run, keeps the SRI placeholder as a literal ellipsis |
 | `foundation.test.ts` | 2 | vendored brand tokens (`src/foundation/brand.generated.ts`) match `foundation.lock.json`'s tag, every role the button uses is an opaque hex colour |
+| `docs-examples.test.ts` | 13 | type-checks every SDK example in `README.md` and `docs/guides/` (TypeScript, JavaScript and the `<script>` of Vue and Svelte blocks) against `src/index.ts`, with minimal framework stubs; a block can opt out with `<!-- typecheck: skip -->` |
 
 Run `npm run test:coverage` for a coverage report (thresholds: 90% lines/statements/functions, 85% branches — enforced in both `pr.yml` and `release.yml`).
 
