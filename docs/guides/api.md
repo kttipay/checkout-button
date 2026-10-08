@@ -53,6 +53,25 @@ maytes.renderButton(document.getElementById('maytes-slot')!, { block: true, radi
 
 That matches Stripe's Express Checkout Element at `buttonHeight: 48` with 6px corners. The colours, logo and label stay Maytes'. Without `radius` and `height` the button renders exactly as before. Invalid values throw `MaytesError` (`CONFIG`).
 
+## Styling with CSS custom properties
+
+The button reads three CSS custom properties, so you can style it from your own CSS or bind it to your design tokens:
+
+| Property | Default | Sets |
+|---|---|---|
+| `--maytes-button-height` | the button's natural height | Minimum height. Keep it from 40px to 55px. |
+| `--maytes-button-radius` | `999px` (the pill) | Corner radius. |
+| `--maytes-button-font-size` | `14px` | Label size. |
+
+```css
+.express-row {
+  --maytes-button-height: 48px;
+  --maytes-button-radius: var(--radius-md);
+}
+```
+
+Set them on the button's container; they're inherited. The `height` and `radius` options set the same properties on the button and validate them; values set in CSS aren't validated. A button given a `height` option also keeps its label on one line. Colours, logo and label stay Maytes'.
+
 ## Examples
 
 ```ts

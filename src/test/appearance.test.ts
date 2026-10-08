@@ -159,3 +159,25 @@ describe('default rendering stays as in 1.1', () => {
     sized.remove();
   });
 });
+
+describe('public CSS custom properties', () => {
+  beforeEach(() => {
+    resetStylesForTests();
+  });
+
+  it('keeps the documented property names and defaults, so page CSS can style the button', () => {
+    const css = injectedCss();
+    expect(css).toContain('min-height: var(--maytes-button-height, auto);');
+    expect(css).toContain('border-radius: var(--maytes-button-radius, 999px);');
+    expect(css).toContain('font-size: var(--maytes-button-font-size, 14px);');
+  });
+
+  it('documents every public property in the API guide', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const guide = readFileSync(join(process.cwd(), 'docs', 'guides', 'api.md'), 'utf8');
+    for (const property of ['--maytes-button-height', '--maytes-button-radius', '--maytes-button-font-size']) {
+      expect(guide, `${property} is documented`).toContain(property);
+    }
+  });
+});
