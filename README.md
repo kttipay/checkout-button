@@ -168,7 +168,7 @@ payButton.addEventListener('click', async () => {
 | `closed` | The customer closed the popup before the checkout loaded. |
 | `ignored` | A checkout launch from this instance was already in flight. |
 
-It never rejects. It throws `MaytesError` (`CONFIG`) synchronously on a destroyed instance or an invalid `mode`. Buttons rendered by the same instance show the busy state while any launch is in flight.
+It never rejects. It throws `MaytesError` (`CONFIG`) synchronously on a destroyed instance or an invalid `mode`. Buttons rendered by the same instance ignore clicks while any launch is in flight.
 
 ## Mobile app
 

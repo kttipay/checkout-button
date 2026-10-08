@@ -69,10 +69,17 @@ export function renderButton(
       icon = nextLogo;
     }
   };
-  if (state.busy) showBusy(true);
-  state.busyViews.add(showBusy);
+  let launchedHere = false;
+  const followOwnLaunch = (busy: boolean): void => {
+    if (!launchedHere) return;
+    showBusy(busy);
+    if (!busy) launchedHere = false;
+  };
+  state.busyViews.add(followOwnLaunch);
 
   const handleClick = (): void => {
+    if (state.busy || state.destroyed) return;
+    launchedHere = true;
     void launchCheckout(state, mode);
   };
 
@@ -85,7 +92,7 @@ export function renderButton(
     cleaned = true;
     button.removeEventListener('click', handleClick);
     button.remove();
-    state.busyViews.delete(showBusy);
+    state.busyViews.delete(followOwnLaunch);
     state.teardowns.delete(teardown);
     releaseStyles();
   };

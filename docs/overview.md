@@ -167,7 +167,7 @@ production → https://checkout.maytes.co
 | `renderButton(container)` where container isn't an `HTMLElement` | `MaytesError(CONFIG)` |
 | `renderButton()` on a destroyed instance | `MaytesError(CONFIG)` |
 | `mode` not `'redirect' \| 'popup'` | `MaytesError(CONFIG)` |
-| Click while this instance's `createCheckout` is in flight | No-op. A per-instance busy flag gates the instance's buttons and `openCheckout()`, and every button on the instance shows the busy state. |
+| Click while this instance's `createCheckout` is in flight | No-op. A per-instance busy flag gates the instance's buttons and `openCheckout()`. Only the clicked button shows the spinner. |
 | `openCheckout()` while a launch is in flight | Resolves `{ outcome: 'ignored' }`; `createCheckout` is not called again. |
 | `openCheckout()` on a destroyed instance, or with an invalid `mode` | Throws `MaytesError(CONFIG)` synchronously. |
 | `openCheckout()` outcomes | Same flow as a click; resolves `popup`, `redirected` (`target`), `failed` (`reason`), or `closed` (popup closed before the checkout loaded). Never rejects. |

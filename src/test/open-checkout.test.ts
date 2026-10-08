@@ -201,7 +201,7 @@ describe('maytes.openCheckout', () => {
   });
 });
 
-describe('one busy state per instance', () => {
+describe('busy state across buttons and openCheckout (unchanged from 1.1)', () => {
   let container: HTMLElement;
   let restoreLocation: () => void;
   let originalOpen: typeof window.open;
@@ -223,7 +223,7 @@ describe('one busy state per instance', () => {
     vi.restoreAllMocks();
   });
 
-  it('shows a rendered button as busy, and ignores its clicks, while openCheckout is in flight', async () => {
+  it('keeps a rendered button looking as it did in 1.1, but ignores its clicks, while openCheckout is in flight', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const pending = deferred();
     const createCheckout = vi.fn(() => pending.promise);
@@ -231,7 +231,7 @@ describe('one busy state per instance', () => {
     maytes.renderButton(container);
     const button = container.querySelector('button')!;
     const launch = maytes.openCheckout();
-    expect(button.getAttribute('aria-busy')).toBe('true');
+    expect(button.getAttribute('aria-busy')).toBeNull();
     button.click();
     expect(createCheckout).toHaveBeenCalledOnce();
     pending.reject(new Error('nope'));
@@ -250,23 +250,43 @@ describe('one busy state per instance', () => {
     expect(createCheckout).toHaveBeenCalledOnce();
   });
 
-  it('shows every button on the instance as busy during a launch started by one of them', () => {
+  it('shows the spinner only on the clicked button, as in 1.1, while its sibling ignores clicks', () => {
     const pending = deferred();
-    const maytes = instance(() => pending.promise);
+    const createCheckout = vi.fn(() => pending.promise);
+    const maytes = instance(createCheckout);
     const second = document.createElement('div');
     document.body.appendChild(second);
     maytes.renderButton(container);
     maytes.renderButton(second);
     container.querySelector('button')!.click();
-    expect(second.querySelector('button')!.getAttribute('aria-busy')).toBe('true');
+    expect(container.querySelector('button')!.getAttribute('aria-busy')).toBe('true');
+    const sibling = second.querySelector('button')!;
+    expect(sibling.getAttribute('aria-busy')).toBeNull();
+    sibling.click();
+    expect(createCheckout).toHaveBeenCalledOnce();
     second.remove();
   });
 
-  it('renders a new button as busy when a launch is already in flight', () => {
+  it('renders a new button idle, as in 1.1, when a launch is already in flight', () => {
     const pending = deferred();
     const maytes = instance(() => pending.promise);
     void maytes.openCheckout();
     maytes.renderButton(container);
-    expect(container.querySelector('button')!.getAttribute('aria-busy')).toBe('true');
+    expect(container.querySelector('button')!.getAttribute('aria-busy')).toBeNull();
+  });
+
+  it('returns the clicked button to its logo when its popup closes', async () => {
+    const pending = deferred();
+    const maytes = instance(() => pending.promise);
+    maytes.renderButton(container);
+    const button = container.querySelector('button')!;
+    button.click();
+    expect(button.getAttribute('aria-busy')).toBe('true');
+    pending.resolve({ checkoutId: 'ck_close' });
+    await vi.waitFor(() => expect(document.querySelector('[data-maytes-overlay]')).not.toBeNull());
+    const popup = (window.open as unknown as ReturnType<typeof vi.fn>).mock.results[0]?.value as { closed: boolean };
+    popup.closed = true;
+    await vi.waitFor(() => expect(button.getAttribute('aria-busy')).toBeNull(), { timeout: 2000 });
+    expect(button.querySelector('.maytes-checkout-button__logo')).not.toBeNull();
   });
 });
