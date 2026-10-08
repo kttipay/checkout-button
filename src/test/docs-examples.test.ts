@@ -32,6 +32,7 @@ const CHECKED_LANGUAGES: Record<string, 'ts' | 'tsx' | 'js'> = {
 
 const FRAMEWORK_STUBS = `
 declare function showMessage(text: string): void;
+declare function onFailed(event: Event): void;
 declare const paymentElement: { on(event: 'change', handler: (event: { value: { type: string } }) => void): void };
 declare const payButton: HTMLButtonElement;
 declare const MAYTES_CPM_ID: string;
@@ -42,7 +43,7 @@ declare function $props(): any;
 
 declare namespace JSX {
   interface Element {}
-  interface IntrinsicElements { div: { ref?: unknown } }
+  interface IntrinsicElements { div: { ref?: unknown }; 'maytes-checkout-button': Record<string, unknown> }
 }
 
 declare module 'react' {
@@ -59,7 +60,7 @@ declare module 'vue' {
 }
 
 declare module 'svelte' {
-  export function onMount(fn: () => void | (() => void)): void;
+  export function onMount(fn: () => void | (() => void) | Promise<void>): void;
 }
 
 declare module 'solid-js' {
@@ -68,7 +69,8 @@ declare module 'solid-js' {
 }
 
 declare module '@angular/core' {
-  export function Component(metadata: { selector: string; standalone?: boolean; template: string }): any;
+  export function Component(metadata: { selector: string; standalone?: boolean; schemas?: unknown[]; template: string }): any;
+  export const CUSTOM_ELEMENTS_SCHEMA: unique symbol;
   export function Input(options?: { required?: boolean }): any;
   export function ViewChild(selector: string, options?: { static?: boolean }): any;
   export interface AfterViewInit { ngAfterViewInit(): void }
@@ -184,7 +186,7 @@ beforeAll(() => {
     skipLibCheck: true,
     esModuleInterop: true,
     types: [],
-    paths: { '@maytes/checkout-button': [SDK_ENTRY] },
+    paths: { '@maytes/checkout-button': [SDK_ENTRY], '@maytes/checkout-button/element': [join(ROOT, 'src', 'element.ts')] },
   });
   recordDiagnostics(stubbedProgram, stubbedFiles, stubs, 'framework stubs');
 
@@ -208,7 +210,7 @@ describe('documentation examples', () => {
   it('finds the SDK examples in the README and every guide that has one', () => {
     const sources = new Set(snippets.map((snippet) => snippet.source));
     expect(snippets.length).toBeGreaterThanOrEqual(11);
-    for (const guide of ['quickstart-npm.md', 'react.md', 'nextjs.md', 'vue-nuxt.md', 'angular.md', 'svelte.md', 'solid.md', 'api.md', 'events.md', 'security-csp.md', 'own-button.md']) {
+    for (const guide of ['quickstart-npm.md', 'react.md', 'nextjs.md', 'vue-nuxt.md', 'angular.md', 'svelte.md', 'solid.md', 'api.md', 'events.md', 'security-csp.md', 'own-button.md', 'web-component.md']) {
       expect(sources.has(`docs/guides/${guide}`), `${guide} has a type-checked example`).toBe(true);
     }
     expect(sources.has('README.md')).toBe(true);

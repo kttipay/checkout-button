@@ -39,4 +39,6 @@ export function SplitWithMaytesButton(props: { cartId: string }) {
 - `onMount` only runs in the browser, so the component also works with SolidStart's server rendering.
 - `props.cartId` is read when the shopper clicks, so it is always the latest value.
 
+Prefer a standard custom element? [`<maytes-checkout-button>`](https://github.com/kttipay/maytes-checkout-button/blob/main/docs/guides/web-component.md) works here too.
+
 Next: [API reference](https://github.com/kttipay/maytes-checkout-button/blob/main/docs/guides/api.md) · [Troubleshooting](https://github.com/kttipay/maytes-checkout-button/blob/main/docs/guides/troubleshooting.md)

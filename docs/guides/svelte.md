@@ -41,4 +41,6 @@ npm install @maytes/checkout-button
 - `onMount` only runs in the browser, so the component works in SvelteKit pages as it is. The function it returns runs when the component is destroyed.
 - Put the server half in `src/routes/api/maytes/checkout/+server.ts`; [Your server](https://github.com/kttipay/maytes-checkout-button/blob/main/docs/guides/server.md) shows what it must return.
 
+Prefer a standard custom element? [`<maytes-checkout-button>`](https://github.com/kttipay/maytes-checkout-button/blob/main/docs/guides/web-component.md) works here too.
+
 Next: [API reference](https://github.com/kttipay/maytes-checkout-button/blob/main/docs/guides/api.md) · [Troubleshooting](https://github.com/kttipay/maytes-checkout-button/blob/main/docs/guides/troubleshooting.md)

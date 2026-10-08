@@ -62,6 +62,7 @@ The button handles steps 1 and 3. Steps 2 and 4 are your server: see [Your serve
 | Angular | [Angular](docs/guides/angular.md) |
 | Svelte or SvelteKit | [Svelte and SvelteKit](docs/guides/svelte.md) |
 | Solid or SolidStart | [Solid](docs/guides/solid.md) |
+| Any framework with a standard custom element (`<maytes-checkout-button>`) | [Web component](docs/guides/web-component.md) |
 | Stripe's Payment Element | [With Stripe's Payment Element](docs/guides/stripe-payment-element.md) |
 | Your own Pay button (Stripe, an express-checkout row, …) | [Using your own button](docs/guides/own-button.md) |
 | Your backend, in any language | [Your server](docs/guides/server.md) |
@@ -158,7 +159,7 @@ Full reference: [API](docs/guides/api.md) · [Events](docs/guides/events.md).
 
 ## All guides
 
-- **Get started:** [plain HTML](docs/guides/quickstart-html.md) · [npm with a bundler](docs/guides/quickstart-npm.md) · [React](docs/guides/react.md) · [Next.js](docs/guides/nextjs.md) · [Vue 3 and Nuxt 3](docs/guides/vue-nuxt.md) · [Angular](docs/guides/angular.md) · [Svelte and SvelteKit](docs/guides/svelte.md) · [Solid](docs/guides/solid.md)
+- **Get started:** [plain HTML](docs/guides/quickstart-html.md) · [npm with a bundler](docs/guides/quickstart-npm.md) · [React](docs/guides/react.md) · [Next.js](docs/guides/nextjs.md) · [Vue 3 and Nuxt 3](docs/guides/vue-nuxt.md) · [Angular](docs/guides/angular.md) · [Svelte and SvelteKit](docs/guides/svelte.md) · [Solid](docs/guides/solid.md) · [Web component](docs/guides/web-component.md)
 - **Server and payments:** [Your server](docs/guides/server.md) · [With Stripe's Payment Element](docs/guides/stripe-payment-element.md) · [Using your own button](docs/guides/own-button.md)
 - **Reference:** [API](docs/guides/api.md) · [Events](docs/guides/events.md) · [Popup, redirect and iframes](docs/guides/launch-behaviour.md) · [Security and CSP](docs/guides/security-csp.md)
 - **Help:** [Troubleshooting](docs/guides/troubleshooting.md)
