@@ -56,7 +56,7 @@ The button handles steps 1 and 3. Steps 2 and 4 are your server: see [Your serve
 |---|---|
 | Server-rendered HTML (PHP, Rails, Django, Laravel, WordPress, …) or any page without a bundler | [Quickstart: plain HTML](docs/guides/quickstart-html.md) |
 | Vite, webpack, esbuild or another bundler, no UI framework | [Quickstart: npm with a bundler](docs/guides/quickstart-npm.md) |
-| React (Vite, Create React App, Remix) | [React](docs/guides/react.md) |
+| React (Vite, Create React App, Remix), including the `@maytes/checkout-button/react` components | [React](docs/guides/react.md) |
 | Next.js | [Next.js](docs/guides/nextjs.md) |
 | Vue 3 or Nuxt 3 | [Vue 3 and Nuxt 3](docs/guides/vue-nuxt.md) |
 | Angular | [Angular](docs/guides/angular.md) |
@@ -146,6 +146,7 @@ maytes.renderButton(document.getElementById('maytes-button')!, { block: true });
 | `renderButton(container, { label, block, mode, radius, height })` | Renders the button and returns a function that removes it. `mode` is `'popup'` (default) or `'redirect'`; `radius` and `height` fit it next to wallet buttons. |
 | `openCheckout({ mode })` | Starts the checkout from your own button, as a click on the rendered button does. See [Using your own button](docs/guides/own-button.md). |
 | `instanceId` | Read-only id of the instance; every `maytes:checkout-*` event carries it in `event.detail`. |
+| `onBusyChange(listener)` | Calls `listener(true)` when a launch starts and `listener(false)` when it ends; returns a function that stops listening. |
 | `redirectToCheckout({ checkoutId, replace })` | Sends the current tab to a checkout you already created. |
 | `checkoutUrl({ checkoutId })` | Builds the hosted checkout URL. |
 | `destroy()` | Tears down the instance, its buttons, listeners and overlay. Call it on unmount. |

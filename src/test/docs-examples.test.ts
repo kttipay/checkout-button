@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -13,6 +13,13 @@ const GUIDES_DIR = join(ROOT, 'docs', 'guides');
 const SKIP_MARKER = /<!--\s*typecheck:\s*skip\s*-->\s*$/;
 const FENCE = /```([a-z]+)\n([\s\S]*?)\n```/g;
 const USES_SDK = /@maytes\/checkout-button|\bMaytes\(/;
+const USES_REACT_BINDINGS = /@maytes\/checkout-button\/react/;
+const REACT_ENTRY = join(ROOT, 'src', 'react', 'index.ts');
+const REACT_GLOBALS = `
+declare function showMessage(text: string): void;
+declare function createCheckoutOnYourServer(cartId: string): Promise<{ checkoutId: string; checkoutUrl?: string }>;
+declare function payWithStripe(): void;
+`;
 const CHECKED_LANGUAGES: Record<string, 'ts' | 'tsx' | 'js'> = {
   ts: 'ts',
   typescript: 'ts',
@@ -115,20 +122,56 @@ function collectSnippets(): Snippet[] {
 const snippets = collectSnippets();
 const diagnosticsBySnippet = new Map<string, string[]>();
 let workDir = '';
+let reactWorkDir = '';
 
-beforeAll(() => {
-  workDir = mkdtempSync(join(tmpdir(), 'maytes-doc-snippets-'));
-  const stubs = join(workDir, 'framework-stubs.d.ts');
-  writeFileSync(stubs, FRAMEWORK_STUBS);
+function recordDiagnostics(program: ts.Program, files: Map<string, string>, preludeFile: string, preludeOwner: string): void {
+  for (const diagnostic of ts.getPreEmitDiagnostics(program)) {
+    const fileName = diagnostic.file?.fileName ?? '';
+    const owner = files.get(fileName) ?? (fileName === preludeFile ? preludeOwner : `SDK source ${fileName}`);
+    const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
+    const position = diagnostic.file !== undefined && diagnostic.start !== undefined
+      ? diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start)
+      : undefined;
+    const where = position === undefined ? '' : ` (line ${position.line + 1})`;
+    diagnosticsBySnippet.set(owner, [...(diagnosticsBySnippet.get(owner) ?? []), `${message}${where}`]);
+  }
+}
 
+function writeSnippets(dir: string, group: Snippet[], offset: number): Map<string, string> {
   const files = new Map<string, string>();
-  snippets.forEach((snippet, index) => {
-    const file = join(workDir, `snippet-${index}.${snippet.language}`);
+  group.forEach((snippet, index) => {
+    const file = join(dir, `snippet-${offset + index}.${snippet.language}`);
     writeFileSync(file, `${snippet.code}\nexport {};\n`);
     files.set(file, snippet.id);
   });
+  return files;
+}
 
-  const program = ts.createProgram([stubs, ...files.keys()], {
+function repositoryCompilerOptions(): ts.CompilerOptions {
+  const config = ts.readConfigFile(join(ROOT, 'tsconfig.json'), ts.sys.readFile).config;
+  const { options } = ts.parseJsonConfigFileContent(config, ts.sys, ROOT);
+  const checkOnly: ts.CompilerOptions = {
+    ...options,
+    noEmit: true,
+    declaration: false,
+    declarationMap: false,
+    sourceMap: false,
+    paths: { '@maytes/checkout-button': [SDK_ENTRY], '@maytes/checkout-button/react': [REACT_ENTRY] },
+  };
+  delete checkOnly.rootDir;
+  delete checkOnly.outDir;
+  return checkOnly;
+}
+
+beforeAll(() => {
+  workDir = mkdtempSync(join(tmpdir(), 'maytes-doc-snippets-'));
+  const stubbedSnippets = snippets.filter((snippet) => !USES_REACT_BINDINGS.test(snippet.code));
+  const reactSnippets = snippets.filter((snippet) => USES_REACT_BINDINGS.test(snippet.code));
+
+  const stubs = join(workDir, 'framework-stubs.d.ts');
+  writeFileSync(stubs, FRAMEWORK_STUBS);
+  const stubbedFiles = writeSnippets(workDir, stubbedSnippets, 0);
+  const stubbedProgram = ts.createProgram([stubs, ...stubbedFiles.keys()], {
     target: ts.ScriptTarget.ES2020,
     module: ts.ModuleKind.ESNext,
     moduleResolution: ts.ModuleResolutionKind.Bundler,
@@ -143,21 +186,22 @@ beforeAll(() => {
     types: [],
     paths: { '@maytes/checkout-button': [SDK_ENTRY] },
   });
+  recordDiagnostics(stubbedProgram, stubbedFiles, stubs, 'framework stubs');
 
-  for (const diagnostic of ts.getPreEmitDiagnostics(program)) {
-    const fileName = diagnostic.file?.fileName ?? '';
-    const owner = files.get(fileName) ?? (fileName === stubs ? 'framework stubs' : `SDK source ${fileName}`);
-    const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
-    const position = diagnostic.file !== undefined && diagnostic.start !== undefined
-      ? diagnostic.file.getLineAndCharacterOfPosition(diagnostic.start)
-      : undefined;
-    const where = position === undefined ? '' : ` (line ${position.line + 1})`;
-    diagnosticsBySnippet.set(owner, [...(diagnosticsBySnippet.get(owner) ?? []), `${message}${where}`]);
-  }
+  if (reactSnippets.length === 0) return;
+  const cacheDir = join(ROOT, 'node_modules', '.cache');
+  mkdirSync(cacheDir, { recursive: true });
+  reactWorkDir = mkdtempSync(join(cacheDir, 'maytes-doc-react-snippets-'));
+  const reactGlobals = join(reactWorkDir, 'react-globals.d.ts');
+  writeFileSync(reactGlobals, REACT_GLOBALS);
+  const reactFiles = writeSnippets(reactWorkDir, reactSnippets, stubbedSnippets.length);
+  const reactProgram = ts.createProgram([reactGlobals, ...reactFiles.keys()], repositoryCompilerOptions());
+  recordDiagnostics(reactProgram, reactFiles, reactGlobals, 'React globals');
 }, 60_000);
 
 afterAll(() => {
   if (workDir !== '') rmSync(workDir, { recursive: true, force: true });
+  if (reactWorkDir !== '') rmSync(reactWorkDir, { recursive: true, force: true });
 });
 
 describe('documentation examples', () => {
