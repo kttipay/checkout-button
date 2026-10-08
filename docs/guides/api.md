@@ -20,7 +20,7 @@ An optional second argument, `{ cspNonce }`, sets a nonce on the styles the SDK 
 | Method | Returns | Description |
 |---|---|---|
 | `renderButton(container, options?)` | `() => void` | Renders the button into `container` (an `HTMLElement`) and returns a function that removes it. |
-| `openCheckout({ mode? })` | `Promise<OpenCheckoutResult>` | Starts the checkout from your own button, exactly as a click on the rendered button does. Call it inside your click handler, before any `await`. Resolves with how the launch ended and never rejects. See [Using your own button](https://github.com/kttipay/maytes-checkout-button/blob/main/docs/guides/own-button.md). |
+| `openCheckout({ mode?, redirectOverlay? })` | `Promise<OpenCheckoutResult>` | Starts the checkout from your own button, exactly as a click on the rendered button does. Takes the same `mode` and `redirectOverlay` as `renderButton()`. Call it inside your click handler, before any `await`. Resolves with how the launch ended and never rejects. See [Using your own button](https://github.com/kttipay/maytes-checkout-button/blob/main/docs/guides/own-button.md). |
 | `redirectToCheckout({ checkoutId, replace? })` | `void` | Sends the current tab to a checkout you already created, without a button. `replace: true` replaces the history entry. Inside an iframe it navigates the top-level window and throws `MaytesError` if the browser refuses. |
 | `instanceId` | `string` | Read-only id of this instance. Every `maytes:checkout-*` event carries it as `event.detail.instanceId`. |
 | `checkoutUrl({ checkoutId })` | `string` | Builds the hosted checkout URL for a checkout you already created. |
@@ -37,6 +37,7 @@ Call `destroy()` when the page or component goes away, or when you need an insta
 | `mode` | `'popup' \| 'redirect'` | `'popup'` | `'popup'` opens a centred window on desktop and falls back to the same tab on phones or when the popup is blocked. `'redirect'` always uses the same tab. |
 | `radius` | `number` | the default pill | Corner radius in whole pixels, from 0 to 999, and at most half the `height` when `height` is set. Use it to match neighbouring buttons. |
 | `height` | `number` | the default height | Button height in whole pixels, from 40 to 55. A button with a `height` keeps its label on one line. |
+| `redirectOverlay` | `boolean` | `false` | `true` shows the Maytes loading overlay while `createCheckout` runs whenever the checkout opens in the same tab (redirect mode, phones, blocked popups). See [Popup, redirect and iframes](https://github.com/kttipay/maytes-checkout-button/blob/main/docs/guides/launch-behaviour.md). |
 
 Two buttons rendered from one instance share one checkout at a time: clicks and `openCheckout()` are ignored while that instance's `createCheckout` is running.
 
