@@ -5,7 +5,8 @@
 <h1 align="center">@maytes/checkout-button</h1>
 
 <p align="center">
-  Drop-in <strong>Split with Maytes</strong> button — one script or import, and shoppers can split any checkout with friends.
+  The <strong>Split with Maytes</strong> button for your checkout page.<br>
+  Shoppers pay their share of the order and invite friends to pay theirs.
 </p>
 
 <p align="center">
@@ -16,37 +17,22 @@
 </p>
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/hero-dark.svg">
-    <img src="docs/assets/hero-light.svg" width="880" alt="A checkout page with the Split with Maytes button. On Maytes the A$320 order is split four ways: the shopper has paid A$80 and three friends are invited to pay theirs.">
-  </picture>
+  <a href="#quickstart">Quickstart</a> ·
+  <a href="#choose-your-setup">Guides</a> ·
+  <a href="#install">Install</a> ·
+  <a href="#api">API</a> ·
+  <a href="https://developers.maytes.co/checkout-button">Integration guide</a>
 </p>
 
-The button sits on your checkout page. A click asks your server for a Maytes checkout and opens it; the shopper pays their share and invites friends to pay theirs. **📖 Full integration guide:** [developers.maytes.co/checkout-button](https://developers.maytes.co/checkout-button)
+When a shopper clicks the button, it asks your server to create a Maytes checkout and opens it in a popup, or in the same tab on phones. Your server captures the payment when Maytes sends the `checkout.authorized` webhook.
 
-| 🧩 Any stack | 🪶 Zero dependencies | 🔒 CSP-safe | ♻️ Evergreen CDN | ✅ Signed provenance |
-|---|---|---|---|---|
-| `<script>` tag or `import { Maytes }`, with [a guide per stack](#choose-your-setup) | Small bundle; ESM/CJS ship unminified so your bundler can tree-shake | No `eval`, `Function` or string timers; every release is scanned | `/v1/` serves the newest `1.x`; [pin](#install) with SRI to freeze | [SLSA](https://slsa.dev) attestation on every npm release |
+## Features
 
-## How it works
-
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/flow-dark.svg">
-  <img src="docs/assets/flow-light.svg" width="880" alt="1. The shopper clicks Split with Maytes. 2. Your server creates the checkout. 3. The shopper pays their share on Maytes. 4. Maytes sends a webhook and your server captures.">
-</picture>
-
-The button handles steps 1 and 3. Steps 2 and 4 are your server: see [Your server](docs/guides/server.md). Then Maytes sends the shopper back to your `return_url`.
-
-<details>
-<summary><b>Step by step</b></summary>
-
-1. **The shopper clicks "Split with Maytes".** The button calls the `createCheckout` function you pass to `Maytes()`.
-2. **Your server creates the checkout.** Your `createCheckout` calls your own endpoint, which creates a Maytes checkout with your API credentials and returns `{ checkoutId, checkoutUrl }`. Credentials never reach the browser.
-3. **The button opens the Maytes checkout.** On desktop it opens a popup with a Maytes loading screen while step 2 runs. On phones, when the popup is blocked, or with `mode: 'redirect'`, it opens in the same tab.
-4. **Your server takes the money.** When the shopper has paid, Maytes sends the `checkout.authorized` webhook; your server captures the checkout within 2 minutes. A successful capture is your "order paid" signal.
-5. **The shopper comes back** to the `return_url` you set when creating the checkout. In popup mode the checkout sends your page there and closes the popup.
-
-</details>
+- **Any stack.** A `<script>` tag or `import { Maytes }`, with [a guide per stack](#choose-your-setup), React components and a web component.
+- **No dependencies.** ESM and CommonJS builds ship unminified, so your bundler tree-shakes them.
+- **CSP-safe.** No `eval`, `Function` or string timers; every release is scanned.
+- **Evergreen CDN.** `/v1/` always serves the newest `1.x`; [pin a version](#install) with SRI to freeze it.
+- **Signed releases.** Every npm release carries [SLSA](https://slsa.dev) provenance.
 
 ## Quickstart
 
