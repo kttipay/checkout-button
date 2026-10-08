@@ -1,0 +1,14 @@
+{
+  "name": "maytes-checkout-button",
+  "displayName": "Maytes checkout button",
+  "description": "Adds the Split with Maytes button (@maytes/checkout-button) to any web stack, with the server, webhook and lifecycle rules that keep it correct.",
+  "author": {
+    "name": "Maytes",
+    "email": "support@maytes.co",
+    "url": "https://maytes.co"
+  },
+  "homepage": "https://developers.maytes.co/checkout-button",
+  "repository": "https://github.com/kttipay/maytes-checkout-button",
+  "license": "MIT",
+  "keywords": ["maytes", "checkout", "split-payments", "payments", "stripe"]
+}

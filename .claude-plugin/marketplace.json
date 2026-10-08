@@ -1,0 +1,15 @@
+{
+  "name": "maytes",
+  "description": "Maytes plugins for AI coding assistants",
+  "owner": {
+    "name": "Maytes",
+    "email": "support@maytes.co"
+  },
+  "plugins": [
+    {
+      "name": "maytes-checkout-button",
+      "source": "./",
+      "description": "Add the Split with Maytes button to a website or Stripe checkout, in any web stack"
+    }
+  ]
+}
