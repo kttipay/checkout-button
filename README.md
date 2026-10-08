@@ -60,7 +60,7 @@ Your server creates the checkout behind `POST /api/maytes/checkout`; [Your serve
 
 ## Choose your setup
 
-<table>
+<table width="100%">
   <tr><th colspan="3" align="left">Frontend</th></tr>
   <tr>
     <td align="center" width="33%"><a href="docs/guides/quickstart-html.md"><img src="docs/assets/stacks/html.svg" width="36" height="36" alt=""><br><b>HTML</b></a></td>
