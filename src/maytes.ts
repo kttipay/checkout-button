@@ -46,6 +46,7 @@ export const Maytes: MaytesFactory = (options, internal) => {
   );
 
   const sdk: MaytesSDK = {
+    instanceId: state.instanceId,
     renderButton(container, opts) {
       return renderButton(state, container, opts);
     },

@@ -63,6 +63,7 @@ export type OpenCheckoutResult =
   | { outcome: 'ignored' };
 
 export interface MaytesSDK {
+  readonly instanceId: string;
   renderButton(container: HTMLElement, options?: RenderButtonOptions): RenderButtonCleanup;
   openCheckout(options?: OpenCheckoutOptions): Promise<OpenCheckoutResult>;
   redirectToCheckout(options: RedirectOptions): void;
