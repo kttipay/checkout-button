@@ -91,7 +91,7 @@ describe('maytes.openCheckout', () => {
       expect(result).toEqual({ outcome: 'redirected', target: 'self' });
       expect(openSpy).not.toHaveBeenCalled();
       expect(assignSpy).toHaveBeenCalledWith('https://sandbox-checkout.maytes.co/?id=ck_m');
-      expect(detailOf(redirected)).toEqual({ url: 'https://sandbox-checkout.maytes.co/?id=ck_m', target: 'self' });
+      expect(detailOf(redirected)).toEqual({ url: 'https://sandbox-checkout.maytes.co/?id=ck_m', target: 'self', instanceId: expect.any(String), source: 'api' });
     } finally {
       Object.defineProperty(window, 'innerWidth', { configurable: true, value: originalInnerWidth });
     }
@@ -123,7 +123,7 @@ describe('maytes.openCheckout', () => {
     expect(result).toEqual({ outcome: 'failed', reason: 'create-checkout-rejected' });
     expect(popup.close).toHaveBeenCalled();
     expect(document.querySelector('[data-maytes-overlay]')).toBeNull();
-    expect(detailOf(failed)).toEqual({ reason: 'create-checkout-rejected', cause: boom });
+    expect(detailOf(failed)).toEqual({ reason: 'create-checkout-rejected', cause: boom, instanceId: expect.any(String), source: 'api' });
   });
 
   it('resolves failed when createCheckout returns the wrong shape', async () => {

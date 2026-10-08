@@ -80,7 +80,7 @@ export function renderButton(
   const handleClick = (): void => {
     if (state.busy || state.destroyed) return;
     launchedHere = true;
-    void launchCheckout(state, mode);
+    void launchCheckout(state, mode, 'button');
   };
 
   button.addEventListener('click', handleClick);

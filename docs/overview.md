@@ -79,6 +79,7 @@ type OpenCheckoutResult =
   | { outcome: 'ignored' };  // a launch from this instance was already in flight
 
 interface MaytesSDK {
+  readonly instanceId: string;  // stable per instance; every maytes:checkout-* event carries it as detail.instanceId
   renderButton(container: HTMLElement, options?: RenderButtonOptions): () => void;
   openCheckout(options?: OpenCheckoutOptions): Promise<OpenCheckoutResult>;
   redirectToCheckout(options: { checkoutId: string; replace?: boolean }): void;
@@ -175,6 +176,7 @@ production → https://checkout.maytes.co
 | `openCheckout()` while a launch is in flight | Resolves `{ outcome: 'ignored' }`; `createCheckout` is not called again. |
 | `openCheckout()` on a destroyed instance, or with an invalid `mode` | Throws `MaytesError(CONFIG)` synchronously. |
 | `openCheckout()` outcomes | Same flow as a click; resolves `popup`, `redirected` (`target`), `failed` (`reason`), or `closed` (popup closed before the checkout loaded). Never rejects. |
+| Any `maytes:checkout-*` event | `detail.instanceId` is the sending instance's `instanceId`; `detail.source` is `'button'` (rendered button) or `'api'` (`openCheckout()`). `opened`/`closed` now carry this detail; the existing `redirected`/`failed` fields are unchanged. |
 | `createCheckout` rejects | Button re-enables, overlay clears, `console.error`, `maytes:checkout-failed` (reason `create-checkout-rejected`). |
 | `createCheckout` resolves the wrong shape | Same as rejection, reason `invalid-shape`. |
 | Default mode (`popup`) on a wide viewport | Blank popup opened synchronously, branded loader painted, then `popup.location.replace(url)`; `maytes:checkout-opened`. The width is the top window's (or the screen's when the top is cross-origin), never the iframe's. |

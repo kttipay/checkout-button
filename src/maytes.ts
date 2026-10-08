@@ -54,7 +54,7 @@ export const Maytes: MaytesFactory = (options, internal) => {
       if (state.destroyed) {
         throw new MaytesError(MaytesErrorCode.Config, 'openCheckout() called on a destroyed Maytes instance');
       }
-      return launchCheckout(state, assertLaunchMode(opts?.mode ?? 'popup', 'openCheckout'));
+      return launchCheckout(state, assertLaunchMode(opts?.mode ?? 'popup', 'openCheckout'), 'api');
     },
     redirectToCheckout(opts) {
       redirectToCheckout(opts);
