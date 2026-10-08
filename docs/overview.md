@@ -84,6 +84,7 @@ interface MaytesSDK {
   readonly instanceId: string;  // stable per instance; every maytes:checkout-* event carries it as detail.instanceId
   renderButton(container: HTMLElement, options?: RenderButtonOptions): () => void;
   openCheckout(options?: OpenCheckoutOptions): Promise<OpenCheckoutResult>;
+  onBusyChange(listener: (busy: boolean) => void): () => void;
   redirectToCheckout(options: { checkoutId: string; replace?: boolean }): void;
   checkoutUrl(options: { checkoutId: string }): string;
   destroy(): void;
@@ -95,6 +96,12 @@ interface MaytesSDK {
 `openCheckout` runs the button's launch from the merchant's own button (for example a Stripe Payment Element checkout): it opens the blank popup synchronously during the call, so it must be called inside a click handler before any `await`. It reports how the launch ended, never the payment result.
 
 `redirectToCheckout` / `checkoutUrl` are the headless path for power users and internal tooling (no button). `destroy()` tears down the instance — popup poll, any open popup, overlay, buttons, and listeners — in one shot and is idempotent; React cleanup is just `() => maytes.destroy()`.
+
+`onBusyChange(listener)` reports the instance's busy state (`true` when a launch starts, `false` when it ends) and returns a function that stops listening; it throws `MaytesError(CONFIG)` on a destroyed instance.
+
+### React bindings (`@maytes/checkout-button/react`)
+
+`MaytesProvider` creates one instance per mount and destroys it on unmount (StrictMode-safe), reading the latest `createCheckout` through a ref; changing `environment` replaces the instance. `MaytesButton` renders `renderButton()` into its own `<div>` and forwards `maytes:checkout-*` events whose `detail.instanceId` is its provider's and `detail.source` is `'button'`. `useMaytes()` returns `{ openCheckout, busy }`; before the instance exists `openCheckout` resolves `{ outcome: 'ignored' }`. The entry is ESM/CJS only, starts with `"use client"`, imports the core from `@maytes/checkout-button` (external), and is never part of the CDN bundle; `scripts/react-entry-check.mjs` enforces all three after every build.
 
 `MaytesError.code` is exactly `'CONFIG'` — the only error code the SDK raises.
 
@@ -219,6 +226,7 @@ src/
 ├── types.ts        # public type surface + global Window augmentation
 ├── errors.ts       # MaytesError + MaytesErrorCode
 ├── version.ts      # SDK_VERSION literal (generated from package.json)
+├── react/          # optional React bindings (subpath export, not in the CDN bundle)
 └── test/           # vitest suite
 ```
 
@@ -248,6 +256,12 @@ Coverage — **264 tests across 19 files** (`src/test/`):
 | `init.test.ts` | 10 | factory validation (`createCheckout` type, `environment` enum), internal `baseUrl` passthrough |
 | `button.test.ts` | 74 | render → click → closure → default popup launch (`about:blank` sync open, branded loader, `location.replace` navigation), explicit redirect mode, phone redirect fallback, blocked-popup redirect event, unique per-instance window name, busy gating, double-click suppression, destroy-mid-flight guard, listener detach on destroy, versioned style marker, immediate overlay clear on Escape, rejection / invalid-shape recovery, env → URL mapping, `baseUrl` override, popup-closed polling + overlay teardown, `maytes:checkout-*` events, cleanup/`destroy` idempotency, style refcounting, `cspNonce` presence/absence, `label` / `block` / `mode` props, multi-button concurrency, framed navigation (same-origin top window on a phone, popup sizing from the top window, cross-origin top window allowing navigation, a refused top navigation opening a new tab, both refused failing loudly and re-enabling the button), the busy spinner reappearing on every checkout attempt, not just the first |
 | `open-checkout.test.ts` | 18 | `openCheckout()`: blank popup opened during the call before `createCheckout`, popup navigation and `opened` event, `checkoutUrl` passthrough, phone and `redirect`-mode redirects, blocked-popup fallback, `failed` for rejection / invalid shape / refused iframe navigation (never rejects), `ignored` while a launch is in flight, CONFIG for a destroyed instance or invalid mode, `closed` when destroyed or the popup is closed before the checkout loads; while a launch is in flight every button on the instance and `openCheckout()` are gated, and only the clicked button shows the spinner |
+| `busy-change.test.ts` | 4 | `onBusyChange()`: `true`/`false` around a button launch and an `openCheckout()` launch, the stop function, CONFIG on a destroyed instance |
+| `react-provider.test.tsx` | 8 | `MaytesProvider` + `useMaytes()`: one instance per mount, StrictMode leaves one, latest `createCheckout` without re-instantiation, `environment` change replaces the instance, `busy` follows the launch, unmount mid-launch closes the popup and never navigates, `ignored` before the instance exists, clear error outside the provider |
+| `react-events.test.ts` | 3 | `listenToInstanceEvents()`: forwards its own instance + source, ignores other instances/sources/detail-less events, calls the latest handlers, stops |
+| `react-button.test.tsx` | 8 | `MaytesButton`: one SDK button under StrictMode, `radius`/`height` passthrough, re-render without duplicates, callbacks only for its own provider and for button launches, opened/closed/redirected forwarding, cleanup on unmount, clear error outside the provider |
+| `react-ssr.test.tsx` | 1 | `renderToString` in a node environment with no `window`/`document` |
+| `react-entry-check.test.ts` | 5 | build-output checks: no React in the CDN bundle, `"use client"` on both React entries, the core imported not bundled, core types imported not inlined |
 | `framing.test.ts` | 10 | `isFramed` / `sameOriginTop` / `viewportWidth` at top level and when framed, falling back to the screen width when the top window is cross-origin (and to the local width when the screen width is unknown), `navigateTopLevel` targeting the top window, opening a tab with `opener` severed when the top window refuses, reporting the refusal when both are blocked, rethrowing failures that aren't a `SecurityError`, recognising a `SecurityError` thrown from another realm as a top-window refusal or as a cross-origin top window |
 | `env.test.ts` | 24 | `isValidEnvironment` (positive, negative and non-string values via `it.each`, type-guard narrowing), `resolveBaseUrl` (sandbox / staging / production mapping, override precedence, empty-string override, defence-in-depth throw on unknown env) |
 | `state.test.ts` | 7 | popup-name generation (`crypto.randomUUID` + fallback), `createInstanceState` config passthrough and defaults |
