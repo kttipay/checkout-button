@@ -1,6 +1,6 @@
 # `@maytes/checkout-button` — Technical Overview
 
-> For the merchant-facing integration guide, see the [integration guide](https://developers.maytes.co/checkout-button) and [`README.md`](../README.md). This document covers internals.
+> Integrating the button? Start with the per-stack quickstarts in [`README.md`](../README.md#choose-your-setup) and the [integration guide](https://developers.maytes.co/checkout-button). This document covers internals: distribution, the end-to-end sequence, behaviour contracts and tests.
 
 ## Purpose
 
@@ -30,9 +30,9 @@ Each release is served from `https://js.maytes.co` under four URL forms:
 | SemVer pin | `/v<version>/checkout-button.js` | 1 yr | yes |
 | Content-hash pin | `/checkout-button.<8-char-sha256>.js` | 1 yr | yes |
 | Internal dev branch | `/dev/checkout-button.js` | no cache | no (bytes roll) |
-| Evergreen major (opt-in) | `/v<major>/checkout-button.js` | ~5 min | no (bytes roll) |
+| Evergreen major (recommended) | `/v<major>/checkout-button.js` | ~5 min | no (bytes roll) |
 
-Pin a SemVer or hashed URL for production and set `<script integrity="…">` for tamper protection; `/dev/` is internal-only, for pre-merge testing (see below). An opt-in `/v1/`-style evergreen major channel also exists for merchants who explicitly choose auto-updates over the pin-safety guarantee — see [`cdn-versioning.md`](./cdn-versioning.md) for the reasoning. `integrity.json` at the CDN root lists the version, hash, and SRI for every bundle; hashing, SRI generation, and CSP linting all run in `npm run build`.
+The evergreen major channel (`/v1/checkout-button.js`) is the recommended production URL: merchants get every `1.x` release without bumping a pin, at the cost of SRI. Merchants who would rather freeze on a tested build pin a SemVer or hashed URL and set `<script integrity="…">`. `/dev/` is internal-only, for pre-merge testing (see below). [`cdn-versioning.md`](./cdn-versioning.md) records the reasoning. `integrity.json` at the CDN root lists the version, hash, and SRI for every bundle; hashing, SRI generation, and CSP linting all run in `npm run build`.
 
 CDN plumbing: Cloudflare Pages project `checkout-button` (Maytes account). The release workflow deploys `dist/` via `wrangler pages deploy`. `scripts/cdn-config.mjs` emits `_headers` — the fixed global/security headers plus CORS and `/integrity.json` — and `_redirects`, which rewrites every release's SemVer and evergreen paths onto its hashed bundle. `Cache-Control` for the pins and the evergreen alias comes from Cloudflare Cache Rules, provisioned by `scripts/ensure-cdn-cache-rules.mjs`, not from `_headers`.
 
@@ -112,29 +112,33 @@ sequenceDiagram
 
   Shopper->>Button: Clicks "Split with Maytes"
   Button->>Button: aria-disabled = true, spinner shown
-  Button->>MerchantBE: createCheckout() (merchant-owned closure)
-  MerchantBE->>API: POST /api/merchant/v1/checkouts
-  API-->>MerchantBE: { checkout_uuid }
-  MerchantBE-->>Button: { checkoutId }
 
-  alt default mode (popup) on desktop
-    Button->>Popup: window.open("about:blank", "maytes-checkout-*", 500x800)
+  alt default mode (popup) on a wide viewport
+    Button->>Popup: window.open("about:blank", "maytes-checkout-*", 500x800), synchronously inside the click
     Button->>Popup: Paint branded loading screen
     Button->>Overlay: showModal() — dark backdrop, Maytes logo, "Completing checkout…"
     Button->>Page: dispatchEvent("maytes:checkout-opened")
-    Button->>Popup: popup.location.replace(hosted checkout URL)
     Note over Button,Popup: Button polls popup.closed every 500ms
+  end
 
+  Button->>MerchantBE: createCheckout() (merchant-owned closure)
+  MerchantBE->>API: POST /api/merchant/v1/checkouts
+  API-->>MerchantBE: { checkout_uuid, checkout_url }
+  MerchantBE-->>Button: { checkoutId, checkoutUrl? }
+
+  alt popup is open
+    Button->>Popup: popup.location.replace(hosted checkout URL)
     Shopper->>Popup: Shares with mates, allocates, pays
     Popup->>API: GET / POST checkout endpoints
     API-->>Popup: Order state
-    Popup-->>Shopper: Redirects popup to merchant return_url / cancel_url
-    Shopper->>Popup: Closes popup (or return_url page calls window.close())
-
-    Note over Button: Next poll detects popup.closed === true
-    Button->>Overlay: close() + remove from DOM
-    Button->>Button: aria-disabled removed
-    Button->>Page: dispatchEvent("maytes:checkout-closed")
+    Popup->>Page: Sends the merchant page (window.opener) to return_url / cancel_url with checkout_id, then closes itself
+    Note over Popup: With no usable opener, the popup navigates itself to return_url instead.
+    opt Shopper closes the popup before finishing
+      Note over Button: Next poll detects popup.closed === true
+      Button->>Overlay: close() + remove from DOM
+      Button->>Button: aria-disabled removed
+      Button->>Page: dispatchEvent("maytes:checkout-closed")
+    end
   else mode: "redirect", phone, or blocked popup
     Button->>Page: top-level navigation (window.top when framed, else the current window)
     Button->>Page: dispatchEvent("maytes:checkout-redirected", { url, target })
@@ -258,7 +262,7 @@ Run `npm run test:coverage` for a coverage report (thresholds: 90% lines/stateme
 
 ### End-to-end testing
 
-Manual end-to-end verification against a real (sandbox) checkout requires a merchant backend that can mint one via the Maytes API — see [`create-checkout`](https://staging-developers.maytes.co/create-checkout) in the merchant docs. This repo's own unit tests (above) cover the button's behaviour in isolation with a stubbed `createCheckout`.
+Manual end-to-end verification against a real (sandbox) checkout requires a merchant backend that can mint one via the Maytes API — see [Create a checkout](https://developers.maytes.co/create-checkout) in the merchant docs. This repo's own unit tests (above) cover the button's behaviour in isolation with a stubbed `createCheckout`.
 
 ### CSP / integrity verification
 

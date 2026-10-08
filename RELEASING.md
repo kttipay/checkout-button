@@ -21,7 +21,7 @@ anything else; publish to **npm** for types/dev use, distribute at runtime as a
 | Version source of truth | `scripts/gen-version.mjs` + `prebuild` script | `src/version.ts` is **generated from `package.json`** so the version can't drift across the two files. |
 | CDN config | `scripts/cdn-config.mjs` | Emits `_headers`/`_redirects` (Cloudflare Pages + Netlify compatible): exact-path immutable cache for each SemVer/hash bundle pin (read from `integrity.json`), short cache for the `/dev/*` rolling alias, CORS, SRI-friendly. |
 | Package metadata | `package.json` | `publishConfig` (public + provenance), `repository`/`homepage`/`bugs`/`keywords`, `sideEffects`, Changesets scripts. |
-| npm landing | `README.md` | Install (CDN + npm), usage, API table. |
+| npm landing | `README.md` | How it works, per-stack quickstarts, API and events reference, install and versioning, troubleshooting. |
 
 ## Versioning & changelog
 
@@ -57,7 +57,7 @@ The SDK's Maytes colours are vendored, not authored here. `foundation.lock.json`
 
 ## Merchant integration & environments
 
-Merchant-facing integration lives in [`README.md`](README.md) (script tag / npm, usage, API table) and the [full integration guide](https://staging-developers.maytes.co/checkout-button). Sandbox vs production is a **runtime `environment` flag** on the same bundle, not a separate build; the SDK CDN (`js.maytes.co`) is one host with pin-vs-roll — prod pins immutable SemVer or hashed URLs + SRI, staging/dev tracks the rolling `/dev` alias.
+Merchant-facing integration lives in [`README.md`](README.md) (per-stack quickstarts, API, events) and the [full integration guide](https://developers.maytes.co/checkout-button). Sandbox vs production is a **runtime `environment` flag** on the same bundle, not a separate build; the SDK CDN (`js.maytes.co`) is one host: production merchants use the evergreen `/v1/` channel (recommended) or pin an immutable SemVer or hashed URL with SRI, and internal pre-merge testing tracks the rolling `/dev` alias.
 
 ## Verification performed
 
