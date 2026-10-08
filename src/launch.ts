@@ -156,6 +156,14 @@ export function assertLaunchMode(mode: unknown, caller = 'renderButton'): Render
   return mode;
 }
 
+export function assertRedirectOverlay(value: unknown, caller = 'renderButton'): boolean {
+  if (value === undefined) return false;
+  if (typeof value !== 'boolean') {
+    throw new MaytesError(MaytesErrorCode.Config, `${caller}({ redirectOverlay }) must be true or false`);
+  }
+  return value;
+}
+
 export function setInstanceBusy(state: InstanceState, busy: boolean): void {
   state.busy = busy;
   for (const view of [...state.busyViews]) view(busy);
@@ -173,9 +181,34 @@ function closeOrphanPopup(state: InstanceState, popup: Window | null): void {
   endLaunch(state);
 }
 
-function navigateAway(state: InstanceState, origin: CheckoutEventDetail, url: string): OpenCheckoutResult {
+function clearOverlayOnRestore(state: InstanceState): void {
+  if (state.restoreDetach !== null) return;
+  const onPageShow = (event: PageTransitionEvent): void => {
+    if (!event.persisted) return;
+    detach();
+    endLaunch(state);
+  };
+  const detach = (): void => {
+    window.removeEventListener('pageshow', onPageShow);
+    state.restoreDetach = null;
+  };
+  window.addEventListener('pageshow', onPageShow);
+  state.restoreDetach = detach;
+}
+
+function navigateAway(
+  state: InstanceState,
+  origin: CheckoutEventDetail,
+  url: string,
+  keepOverlay: boolean,
+): OpenCheckoutResult {
   const navigation = navigateTopLevel(url, false);
-  endLaunch(state);
+  if (keepOverlay && (navigation.target === 'self' || navigation.target === 'top')) {
+    setInstanceBusy(state, false);
+    clearOverlayOnRestore(state);
+  } else {
+    endLaunch(state);
+  }
   if (navigation.target === null) {
     console.error('[maytes/checkout-button] could not leave the embedding frame:', navigation.cause);
     dispatchFailed(origin, 'navigation-blocked', navigation.cause);
@@ -205,12 +238,14 @@ export async function launchCheckout(
   state: InstanceState,
   mode: RenderButtonMode,
   source: LaunchSource,
+  redirectOverlay = false,
 ): Promise<OpenCheckoutResult> {
   if (state.busy || state.destroyed) return { outcome: 'ignored' };
   setInstanceBusy(state, true);
   const origin = eventDetail(state, source);
   const shouldUsePopup = mode === 'popup' && !isMobileViewport();
   const popup = shouldUsePopup ? openPopupLoader(state, origin) : null;
+  if (popup === null && redirectOverlay) showOverlay(state, 'redirect');
   try {
     const result = await state.config.createCheckout();
     if (state.destroyed || (popup !== null && popup.closed)) {
@@ -240,7 +275,7 @@ export async function launchCheckout(
     if (shouldUsePopup) {
       console.warn('[maytes/checkout-button] popup was blocked; redirecting instead');
     }
-    return navigateAway(state, origin, url);
+    return navigateAway(state, origin, url, redirectOverlay);
   } catch (err) {
     if (popup !== null && popup.closed) return { outcome: 'closed' };
     closeOrphanPopup(state, popup);

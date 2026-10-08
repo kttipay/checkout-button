@@ -27,6 +27,7 @@ export interface RenderButtonOptions {
   mode?: RenderButtonMode;
   radius?: number;
   height?: number;
+  redirectOverlay?: boolean;
 }
 
 export type RenderButtonCleanup = () => void;
@@ -65,6 +66,7 @@ export interface RedirectOptions extends CheckoutUrlOptions {
 
 export interface OpenCheckoutOptions {
   mode?: RenderButtonMode;
+  redirectOverlay?: boolean;
 }
 
 export type OpenCheckoutResult =

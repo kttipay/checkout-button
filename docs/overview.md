@@ -184,6 +184,9 @@ production → https://checkout.maytes.co
 | `height` not a whole number from 40 to 55 | `MaytesError(CONFIG)`, before any style is injected |
 | `radius` not a whole number from 0 to 999, or above `height / 2` when `height` is set | `MaytesError(CONFIG)`, before any style is injected |
 | No `radius`/`height` | No inline style; the default pill exactly as before |
+| No `redirectOverlay` (default) | Redirects show no overlay, exactly as before |
+| `redirectOverlay: true` and the launch redirects (redirect mode, phone width, blocked popup) | The overlay ("Taking you to Maytes…", no "Return to Maytes" link) shows while `createCheckout` runs; it is removed on any failure, kept once the page navigates, and cleared with the busy state on a back/forward-cache restore (`pageshow` with `persisted`) |
+| `redirectOverlay` not a boolean | `MaytesError(CONFIG)` |
 | Click while this instance's `createCheckout` is in flight | No-op. A per-instance busy flag gates the instance's buttons and `openCheckout()`. Only the clicked button shows the spinner. |
 | `openCheckout()` while a launch is in flight | Resolves `{ outcome: 'ignored' }`; `createCheckout` is not called again. |
 | `openCheckout()` on a destroyed instance, or with an invalid `mode` | Throws `MaytesError(CONFIG)` synchronously. |

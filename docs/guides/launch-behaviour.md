@@ -13,6 +13,19 @@ When the shopper finishes, the hosted checkout returns them to your `return_url`
 
 The popup opens synchronously inside the click, before your `createCheckout` runs, so browsers treat it as a direct result of the shopper's click.
 
+### A loading overlay for same-tab launches
+
+By default a same-tab launch shows only the button's spinner while `createCheckout` runs. Pass `redirectOverlay: true` to `renderButton()` or `openCheckout()` to cover the page with the Maytes overlay ("Taking you to Maytes…", without the "Return to Maytes" button) until the page leaves:
+
+```ts
+import { Maytes } from '@maytes/checkout-button';
+
+const maytes = Maytes({ createCheckout, environment: 'sandbox' });
+maytes.renderButton(document.getElementById('maytes-button')!, { mode: 'redirect', redirectOverlay: true });
+```
+
+The overlay goes away if `createCheckout` fails, and clears itself when the shopper comes back with the back button. Invalid values throw `MaytesError` (`CONFIG`).
+
 ## Inside an iframe
 
 The hosted checkout must run in the top-level window, because its session cookie is refused inside a cross-site frame. If you render the button inside an iframe:
