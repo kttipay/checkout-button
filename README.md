@@ -5,87 +5,79 @@
 <h1 align="center">@maytes/checkout-button</h1>
 
 <p align="center">
-  Drop-in <strong>Split with Maytes</strong> button — one script or import, and shoppers can split any checkout with friends.
+  The <strong>Split with Maytes</strong> button for your checkout page.<br>
+  Shoppers pay their share of the order and invite friends to pay theirs.
 </p>
 
 <p align="center">
   <a href="https://www.npmjs.com/package/@maytes/checkout-button"><img alt="npm version" src="https://img.shields.io/npm/v/@maytes/checkout-button?color=4A0324&label=npm"></a>
-  <a href="https://bundlephobia.com/package/@maytes/checkout-button"><img alt="bundle size" src="https://img.shields.io/bundlephobia/minzip/@maytes/checkout-button?color=FE572A&label=gzip"></a>
   <a href="./CHANGELOG.md"><img alt="provenance" src="https://img.shields.io/badge/npm-provenance-4A0324"></a>
   <a href="./LICENSE"><img alt="license" src="https://img.shields.io/badge/license-MIT-4A0324"></a>
   <a href="https://developers.maytes.co/checkout-button"><img alt="docs" src="https://img.shields.io/badge/docs-developers.maytes.co-FE572A"></a>
 </p>
 
----
+<p align="center">
+  <a href="#quickstart">Quickstart</a> ·
+  <a href="#choose-your-setup">Guides</a> ·
+  <a href="#install">Install</a> ·
+  <a href="#api">API</a> ·
+  <a href="https://developers.maytes.co/checkout-button">Integration guide</a>
+</p>
 
-The button sits on your checkout page. When a shopper clicks it, it asks your server for a Maytes checkout and opens the Maytes-hosted checkout, where the shopper pays their share and invites friends to pay theirs. It works with any stack: a `<script>` tag or an npm import, with or without a framework.
+When a shopper clicks the button, it asks your server to create a Maytes checkout and opens it in a popup, or in the same tab on phones. Your server captures the payment when Maytes sends the `checkout.authorized` webhook.
 
-**📖 Full integration guide:** [developers.maytes.co/checkout-button](https://developers.maytes.co/checkout-button)
+## Features
 
-- **Any stack** — the same `Maytes()` factory from a `<script>` tag or `import { Maytes }`; [a guide per stack](#choose-your-setup) for plain HTML, bundlers, React, Next.js, Vue, Nuxt, Angular, Svelte and Solid.
-- **Zero runtime dependencies** — a small, dependency-free bundle; ESM/CJS ship unminified so your bundler can tree-shake it.
-- **CSP-safe by construction** — no `eval`, `Function`, or string-form timers; every release is scanned for it before shipping.
-- **Evergreen CDN by default** — the recommended `<script>` tag always serves the newest `1.x` release; pin a version with SRI if you'd rather freeze on a tested build.
-- **Signed provenance** — every npm release carries a [SLSA](https://slsa.dev) provenance attestation back to this repo's build.
+- **Any stack.** A `<script>` tag or `import { Maytes }`, with [a guide per stack](#choose-your-setup), React components and a web component.
+- **No dependencies.** ESM and CommonJS builds ship unminified, so your bundler tree-shakes them.
+- **CSP-safe.** No `eval`, `Function` or string timers; every release is scanned.
+- **Evergreen CDN.** `/v1/` always serves the newest `1.x`; [pin a version](#install) with SRI to freeze it.
+- **Signed releases.** Every npm release carries [SLSA](https://slsa.dev) provenance.
 
-## Contents
+## Quickstart
 
-- [How it works](#how-it-works)
-- [Choose your setup](#choose-your-setup)
-- [Install](#install)
-- [API](#api)
-- [All guides](#all-guides)
-- [Using an AI coding assistant](#using-an-ai-coding-assistant)
-- [Mobile app](#mobile-app)
-- [Development](#development)
+```html
+<div id="maytes-button"></div>
 
-## How it works
+<script src="https://js.maytes.co/v1/checkout-button.js" crossorigin="anonymous"></script>
+<script>
+  const maytes = window.Maytes({
+    environment: 'sandbox',
+    createCheckout: async () => {
+      const res = await fetch('/api/maytes/checkout', { method: 'POST' });
+      if (!res.ok) throw new Error('Could not create the Maytes checkout');
+      return res.json(); // { checkoutId, checkoutUrl }
+    },
+  });
 
-1. **The shopper clicks "Split with Maytes".** The button calls the `createCheckout` function you pass to `Maytes()`.
-2. **Your server creates the checkout.** Your `createCheckout` calls your own endpoint, which creates a Maytes checkout with your API credentials and returns `{ checkoutId, checkoutUrl }`. Credentials never reach the browser.
-3. **The button opens the Maytes checkout.** On desktop it opens a popup with a Maytes loading screen while step 2 runs. On phones, when the popup is blocked, or with `mode: 'redirect'`, it opens in the same tab.
-4. **Your server takes the money.** When the shopper has paid, Maytes sends the `checkout.authorized` webhook; your server captures the checkout within 2 minutes. A successful capture is your "order paid" signal.
-5. **The shopper comes back** to the `return_url` you set when creating the checkout. In popup mode the checkout sends your page there and closes the popup.
+  maytes.renderButton(document.getElementById('maytes-button'), { block: true });
+</script>
+```
 
-The button handles steps 1 and 3. Steps 2 and 4 are your server: see [Your server](docs/guides/server.md).
+Your server creates the checkout behind `POST /api/maytes/checkout`; [Your server](docs/guides/server.md) shows how. Using a framework? Pick it below.
 
 <a id="usage"></a>
 
 ## Choose your setup
 
-| Your checkout page is built with | Guide |
-|---|---|
-| Server-rendered HTML (PHP, Rails, Django, Laravel, WordPress, …) or any page without a bundler | [Quickstart: plain HTML](docs/guides/quickstart-html.md) |
-| Vite, webpack, esbuild or another bundler, no UI framework | [Quickstart: npm with a bundler](docs/guides/quickstart-npm.md) |
-| React (Vite, Create React App, Remix), including the `@maytes/checkout-button/react` components | [React](docs/guides/react.md) |
-| Next.js | [Next.js](docs/guides/nextjs.md) |
-| Vue 3 or Nuxt 3 | [Vue 3 and Nuxt 3](docs/guides/vue-nuxt.md) |
-| Angular | [Angular](docs/guides/angular.md) |
-| Svelte or SvelteKit | [Svelte and SvelteKit](docs/guides/svelte.md) |
-| Solid or SolidStart | [Solid](docs/guides/solid.md) |
-| Any framework with a standard custom element (`<maytes-checkout-button>`) | [Web component](docs/guides/web-component.md) |
-| Stripe's Payment Element | [With Stripe's Payment Element](docs/guides/stripe-payment-element.md) |
-| Your own Pay button (Stripe, an express-checkout row, …) | [Using your own button](docs/guides/own-button.md) |
-| Your backend, in any language | [Your server](docs/guides/server.md) |
-
-Every guide is self-contained: the install step, a copy-paste example and what to read next.
+- **Frontend:** [HTML](docs/guides/quickstart-html.md) · [npm](docs/guides/quickstart-npm.md) · [React](docs/guides/react.md) · [Next.js](docs/guides/nextjs.md) · [Vue and Nuxt](docs/guides/vue-nuxt.md) · [Angular](docs/guides/angular.md) · [Svelte](docs/guides/svelte.md) · [Solid](docs/guides/solid.md) · [Web component](docs/guides/web-component.md)
+- **Integration:** [Your server](docs/guides/server.md) · [Stripe Payment Element](docs/guides/stripe-payment-element.md) · [Your own button](docs/guides/own-button.md)
 
 ## Install
 
-### Script tag (CDN)
-
-|  | Evergreen (recommended) | Pinned |
+| | Evergreen (recommended) | Pinned |
 |---|---|---|
 | **Use when** | Default — always get the newest `1.x` release | You'd rather freeze on a tested build |
 | **Guarantee** | Always current; a bad release reaches you immediately | The bytes you tested are the bytes shipped, forever |
 | **SRI** | Not possible | Yes |
 
-### Evergreen (recommended)
-
 ```html
 <script src="https://js.maytes.co/v1/checkout-button.js"
         crossorigin="anonymous"></script>
 ```
+
+<details>
+<summary><b>Evergreen: CSP and versions</b></summary>
 
 No `integrity` attribute is possible here — the bytes change without notice as new `1.x` releases ship. Trust the origin via CSP instead:
 
@@ -95,7 +87,10 @@ Content-Security-Policy: script-src 'self' https://js.maytes.co;
 
 `/v1/` tracks the newest `1.x` release only; it won't jump to a future `2.x` (move to `/v2/checkout-button.js` explicitly once that ships). Poll `https://js.maytes.co/integrity.json` if you want to detect changes yourself.
 
-### Pinned (SemVer or content hash)
+</details>
+
+<details>
+<summary><b>Pinned: SemVer or content hash, with SRI</b></summary>
 
 For a guarantee instead of convenience — freeze on a tested build, update on your own schedule:
 
@@ -115,7 +110,9 @@ For a guarantee instead of convenience — freeze on a tested build, update on y
 
 Both URLs are the same release bytes with the same SRI value — pick either. Full version/hash/SRI history: [`CHANGELOG.md`](./CHANGELOG.md), [releases](https://github.com/kttipay/maytes-checkout-button/releases), `https://js.maytes.co/integrity.json`. Pinned URLs never change once published.
 
-### npm
+</details>
+
+**npm**
 
 ```bash
 npm install @maytes/checkout-button
@@ -158,10 +155,8 @@ Style the button from CSS with `--maytes-button-height`, `--maytes-button-radius
 
 Full reference: [API](docs/guides/api.md) · [Events](docs/guides/events.md).
 
-## All guides
+## More guides
 
-- **Get started:** [plain HTML](docs/guides/quickstart-html.md) · [npm with a bundler](docs/guides/quickstart-npm.md) · [React](docs/guides/react.md) · [Next.js](docs/guides/nextjs.md) · [Vue 3 and Nuxt 3](docs/guides/vue-nuxt.md) · [Angular](docs/guides/angular.md) · [Svelte and SvelteKit](docs/guides/svelte.md) · [Solid](docs/guides/solid.md) · [Web component](docs/guides/web-component.md)
-- **Server and payments:** [Your server](docs/guides/server.md) · [With Stripe's Payment Element](docs/guides/stripe-payment-element.md) · [Using your own button](docs/guides/own-button.md)
 - **Reference:** [API](docs/guides/api.md) · [Events](docs/guides/events.md) · [Popup, redirect and iframes](docs/guides/launch-behaviour.md) · [Security and CSP](docs/guides/security-csp.md)
 - **Help:** [Troubleshooting](docs/guides/troubleshooting.md)
 - **Internals:** [Technical overview](docs/overview.md) · [CDN versioning decision record](docs/cdn-versioning.md)
@@ -183,7 +178,7 @@ Then ask, for example, "add Split with Maytes to my checkout". Other assistants 
 
 ## Mobile app
 
-After checkout, shoppers split the cost with friends using Maytes payment links (`app.maytes.co/…`). On a phone with the Maytes app installed, those links open directly in the app (iOS Universal Links / Android App Links); otherwise they open in the browser. Maytes handles this end to end — merchants integrate only the button and configure nothing for the app.
+After checkout, shoppers split the cost with friends using Maytes payment links (`app.maytes.co/…`). With the Maytes app installed, those links open in the app (iOS Universal Links / Android App Links); otherwise in the browser. Maytes handles this end to end — you integrate only the button and configure nothing for the app.
 
 ## Development
 
