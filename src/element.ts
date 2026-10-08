@@ -1,5 +1,6 @@
 import { Maytes, MaytesError, MaytesErrorCode } from '@maytes/checkout-button';
 import type {
+  CheckoutFailedDetail,
   CreateCheckoutFn,
   MaytesEnvironment,
   MaytesSDK,
@@ -9,6 +10,16 @@ import type {
 } from '@maytes/checkout-button';
 
 export const MAYTES_CHECKOUT_BUTTON_TAG = 'maytes-checkout-button';
+
+export interface ElementConfigFailedDetail {
+  reason: 'config';
+  cause: unknown;
+}
+
+export type MaytesElementFailedDetail = CheckoutFailedDetail | ElementConfigFailedDetail;
+
+const OBSERVED_ATTRIBUTES = ['environment', 'nonce', 'mode', 'label', 'block', 'radius', 'height'];
+const INSTANCE_ATTRIBUTES = new Set(['environment', 'nonce']);
 
 const BaseElement = (typeof HTMLElement === 'undefined' ? class {} : HTMLElement) as typeof HTMLElement;
 
@@ -35,6 +46,10 @@ export class MaytesCheckoutButtonElement extends BaseElement {
   private maytes: MaytesSDK | null = null;
   private removeButton: RenderButtonCleanup | null = null;
 
+  static get observedAttributes(): string[] {
+    return OBSERVED_ATTRIBUTES;
+  }
+
   get createCheckout(): CreateCheckoutFn | null {
     return this.checkoutCallback;
   }
@@ -58,24 +73,61 @@ export class MaytesCheckoutButtonElement extends BaseElement {
     });
   }
 
+  attributeChangedCallback(name: string, previous: string | null, next: string | null): void {
+    if (previous === next) return;
+    if (this.maytes === null) {
+      this.mount();
+      return;
+    }
+    if (INSTANCE_ATTRIBUTES.has(name)) {
+      this.recreateWhenIdle();
+      return;
+    }
+    this.renderButton(this.maytes);
+  }
+
   private mount(): void {
     if (!this.isConnected || this.checkoutCallback === null || this.maytes !== null) return;
     const nonce = this.getAttribute('nonce');
-    const maytes = Maytes(
-      {
-        createCheckout: () => this.startCheckout(),
-        environment: this.getAttribute('environment') as MaytesEnvironment,
-      },
-      nonce === null ? undefined : { cspNonce: nonce },
-    );
+    let maytes: MaytesSDK;
+    try {
+      maytes = Maytes(
+        {
+          createCheckout: () => this.startCheckout(),
+          environment: this.getAttribute('environment') as MaytesEnvironment,
+        },
+        nonce === null ? undefined : { cspNonce: nonce },
+      );
+    } catch (error) {
+      this.reportConfigError(error);
+      return;
+    }
     this.maytes = maytes;
     this.renderButton(maytes);
   }
 
   private renderButton(maytes: MaytesSDK): void {
-    const removeButton = maytes.renderButton(this, readButtonOptions(this));
+    let removeButton: RenderButtonCleanup;
+    try {
+      removeButton = maytes.renderButton(this, readButtonOptions(this));
+    } catch (error) {
+      this.reportConfigError(error);
+      return;
+    }
     this.removeButton?.();
     this.removeButton = removeButton;
+  }
+
+  private recreateWhenIdle(): void {
+    this.unmount();
+    this.mount();
+  }
+
+  private reportConfigError(error: unknown): void {
+    if (!(error instanceof MaytesError)) throw error;
+    console.error('[maytes/checkout-button] <maytes-checkout-button> configuration error:', error);
+    const detail: ElementConfigFailedDetail = { reason: 'config', cause: error };
+    this.dispatchEvent(new CustomEvent('maytes-failed', { detail, bubbles: true, composed: true }));
   }
 
   private startCheckout(): ReturnType<CreateCheckoutFn> {

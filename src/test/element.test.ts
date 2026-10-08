@@ -8,6 +8,7 @@ import {
 import { makeFakePopup, type FakePopup } from './fake-popup.js';
 import { installFakeLocation } from './fake-location.js';
 import { resetMaytesDomForTests } from './reset-dom.js';
+import { MaytesError } from '../index.js';
 
 type Pending = { promise: Promise<{ checkoutId: string }>; resolve: (v: { checkoutId: string }) => void };
 
@@ -174,4 +175,70 @@ describe('<maytes-checkout-button> rendering', () => {
     launch.resolve({ checkoutId: 'moved' });
     await vi.waitFor(() => expect(popup.location.replace).toHaveBeenCalledWith('https://sandbox-checkout.maytes.co/?id=moved'));
   });
+  it('re-renders the button when label changes, keeping an in-flight launch', async () => {
+    const launch = pending();
+    const createCheckout = vi.fn(() => launch.promise);
+    const el = element();
+    document.body.appendChild(el);
+    el.createCheckout = createCheckout;
+    const instanceId = el.instanceId;
+    sdkButton(el)!.click();
+    el.setAttribute('label', 'Split it');
+    expect(sdkButton(el)!.getAttribute('aria-label')).toBe('Split it Maytes');
+    expect(el.querySelectorAll('button').length).toBe(1);
+    sdkButton(el)!.click();
+    expect(createCheckout).toHaveBeenCalledOnce();
+    expect(el.instanceId).toBe(instanceId);
+    expect(popup.close).not.toHaveBeenCalled();
+    launch.resolve({ checkoutId: 'kept' });
+    await vi.waitFor(() => expect(popup.location.replace).toHaveBeenCalledWith('https://sandbox-checkout.maytes.co/?id=kept'));
+  });
+
+  it('re-creates the instance when environment changes', () => {
+    const el = element();
+    document.body.appendChild(el);
+    el.createCheckout = async () => ({ checkoutId: 'ck' });
+    const before = el.instanceId;
+    el.setAttribute('environment', 'production');
+    expect(el.instanceId).not.toBe(before);
+    expect(el.instanceId).not.toBeNull();
+    expect(el.querySelectorAll('button').length).toBe(1);
+  });
+
+  it('reports an invalid environment as maytes-failed instead of throwing', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const failed = vi.fn();
+    const el = element({ environment: 'live' });
+    el.addEventListener('maytes-failed', failed);
+    document.body.appendChild(el);
+    expect(() => { el.createCheckout = async () => ({ checkoutId: 'ck' }); }).not.toThrow();
+    expect(sdkButton(el)).toBeNull();
+    const detail = (failed.mock.calls[0]?.[0] as CustomEvent).detail;
+    expect(detail.reason).toBe('config');
+    expect(detail.cause).toBeInstanceOf(MaytesError);
+    expect(error).toHaveBeenCalled();
+  });
+
+  it('reports an invalid height and keeps the last valid button', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const failed = vi.fn();
+    const el = element({ environment: 'sandbox', height: '48' });
+    el.addEventListener('maytes-failed', failed);
+    document.body.appendChild(el);
+    el.createCheckout = async () => ({ checkoutId: 'ck' });
+    el.setAttribute('height', 'tall');
+    expect((failed.mock.calls[0]?.[0] as CustomEvent).detail.reason).toBe('config');
+    expect(el.querySelectorAll('button').length).toBe(1);
+    expect(sdkButton(el)!.style.getPropertyValue('--maytes-button-height')).toBe('48px');
+  });
+
+  it('ignores attribute changes before the element can render', () => {
+    const el = element();
+    document.body.appendChild(el);
+    el.setAttribute('label', 'Later');
+    expect(sdkButton(el)).toBeNull();
+    el.createCheckout = async () => ({ checkoutId: 'ck' });
+    expect(sdkButton(el)!.getAttribute('aria-label')).toBe('Later Maytes');
+  });
 });
+
