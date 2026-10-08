@@ -13,13 +13,15 @@ The merchant's page never embeds the Maytes flow — it opens the hosted checkou
 
 ## Distribution
 
-Three bundle formats ship from `dist/`:
+Three core bundle formats, plus the custom element, ship from `dist/`:
 
 | Bundle | Format | Purpose |
 |---|---|---|
 | `checkout-button.js` | IIFE | `<script>` drop-in, attaches `window.Maytes` |
 | `checkout-button.mjs` | ESM | `import { Maytes } from '@maytes/checkout-button'` in modern bundlers |
 | `checkout-button.cjs` | CJS | `require('@maytes/checkout-button')` for legacy Node/CJS builds |
+| `checkout-button.element.js` | IIFE | `<script>` drop-in for `<maytes-checkout-button>`; includes the core and also attaches `window.Maytes` |
+| `element.mjs` / `element.cjs` | ESM / CJS | `import '@maytes/checkout-button/element'`; imports the core from `@maytes/checkout-button`, so npm users share one copy |
 
 The IIFE (CDN) bundle ships minified with a sourcemap; the ESM/CJS (npm) bundles ship unminified so the consumer's bundler can minify them.
 
@@ -188,6 +190,12 @@ production → https://checkout.maytes.co
 | `redirectOverlay: true` and the launch redirects (redirect mode, phone width, blocked popup) | The overlay ("Taking you to Maytes…", no "Return to Maytes" link) shows while `createCheckout` runs; it is removed on any failure, kept once the page navigates, and cleared with the busy state on a back/forward-cache restore (`pageshow` with `persisted`) |
 | `redirectOverlay` not a boolean | `MaytesError(CONFIG)` |
 | Click while this instance's `createCheckout` is in flight | No-op. A per-instance busy flag gates the instance's buttons and `openCheckout()`. Only the clicked button shows the spinner. |
+| `<maytes-checkout-button>` connected without `createCheckout` | Renders nothing until the property is set |
+| `mode`/`label`/`block`/`radius`/`height` attribute changes | The button is re-rendered on the same instance; an in-flight launch continues |
+| `environment`/`nonce` attribute changes | The instance is re-created, after any in-flight launch ends |
+| Invalid attribute on `<maytes-checkout-button>` | `console.error` + `maytes-failed` with `{ reason: 'config', cause }`; never throws |
+| `<maytes-checkout-button>` removed (not just moved) | Instance destroyed on the next microtask; a move keeps an in-flight launch |
+| `<maytes-checkout-button>` imported during SSR | No `window`/`customElements` access; nothing is defined |
 | `openCheckout()` while a launch is in flight | Resolves `{ outcome: 'ignored' }`; `createCheckout` is not called again. |
 | `openCheckout()` on a destroyed instance, or with an invalid `mode` | Throws `MaytesError(CONFIG)` synchronously. |
 | `openCheckout()` outcomes | Same flow as a click; resolves `popup`, `redirected` (`target`), `failed` (`reason`), or `closed` (popup closed before the checkout loaded). Never rejects. |
@@ -228,6 +236,7 @@ src/
 ├── branding.ts     # Maytes logo SVG + brand colors
 ├── types.ts        # public type surface + global Window augmentation
 ├── errors.ts       # MaytesError + MaytesErrorCode
+├── element.ts      # <maytes-checkout-button>: a light-DOM consumer of the public API (attributes, createCheckout property, per-instance events, open())
 ├── version.ts      # SDK_VERSION literal (generated from package.json)
 ├── react/          # optional React bindings (subpath export, not in the CDN bundle)
 └── test/           # vitest suite
@@ -265,6 +274,7 @@ Coverage — **264 tests across 19 files** (`src/test/`):
 | `react-button.test.tsx` | 8 | `MaytesButton`: one SDK button under StrictMode, `radius`/`height` passthrough, re-render without duplicates, callbacks only for its own provider and for button launches, opened/closed/redirected forwarding, cleanup on unmount, clear error outside the provider |
 | `react-ssr.test.tsx` | 1 | `renderToString` in a node environment with no `window`/`document` |
 | `react-entry-check.test.ts` | 5 | build-output checks: no React in the CDN bundle, `"use client"` on both React entries, the core imported not bundled, core types imported not inlined |
+| `element.test.ts`, `element-ssr.test.ts` | 28 | `<maytes-checkout-button>`: idempotent definition, SSR-safe import, nothing rendered until `createCheckout` is set (before or after connecting), light DOM, attributes → options, nonce, a replaced `createCheckout` without re-rendering, removal destroys the instance and closes an unloaded popup, a DOM move keeps an in-flight launch, attribute re-render keeping the launch, environment re-create deferred until the launch ends, config errors as `maytes-failed` `reason: 'config'`, per-instance event forwarding (bubbling, composed), `open()` |
 | `framing.test.ts` | 10 | `isFramed` / `sameOriginTop` / `viewportWidth` at top level and when framed, falling back to the screen width when the top window is cross-origin (and to the local width when the screen width is unknown), `navigateTopLevel` targeting the top window, opening a tab with `opener` severed when the top window refuses, reporting the refusal when both are blocked, rethrowing failures that aren't a `SecurityError`, recognising a `SecurityError` thrown from another realm as a top-window refusal or as a cross-origin top window |
 | `env.test.ts` | 24 | `isValidEnvironment` (positive, negative and non-string values via `it.each`, type-guard narrowing), `resolveBaseUrl` (sandbox / staging / production mapping, override precedence, empty-string override, defence-in-depth throw on unknown env) |
 | `state.test.ts` | 7 | popup-name generation (`crypto.randomUUID` + fallback), `createInstanceState` config passthrough and defaults |
