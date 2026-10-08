@@ -31,7 +31,7 @@ When a shopper clicks the button, it asks your server to create a Maytes checkou
 - **Any stack.** A `<script>` tag or `import { Maytes }`, with [a guide per stack](#choose-your-setup), React components and a web component.
 - **No dependencies.** ESM and CommonJS builds ship unminified, so your bundler tree-shakes them.
 - **CSP-safe.** No `eval`, `Function` or string timers; every release is scanned.
-- **Evergreen CDN.** `/v1/` always serves the newest `1.x`; [pin a version](#install) with SRI to freeze it.
+- **Evergreen CDN.** `/v1/` always serves the newest `1.x`, so you get fixes without redeploying.
 - **Signed releases.** Every npm release carries [SLSA](https://slsa.dev) provenance.
 
 ## Quickstart
@@ -65,50 +65,25 @@ Your server creates the checkout behind `POST /api/maytes/checkout`; [Your serve
 
 ## Install
 
-| | Evergreen (recommended) | Pinned |
-|---|---|---|
-| **Use when** | Default — always get the newest `1.x` release | You'd rather freeze on a tested build |
-| **Guarantee** | Always current; a bad release reaches you immediately | The bytes you tested are the bytes shipped, forever |
-| **SRI** | Not possible | Yes |
+**Script tag**
 
 ```html
 <script src="https://js.maytes.co/v1/checkout-button.js"
         crossorigin="anonymous"></script>
 ```
 
-<details>
-<summary><b>Evergreen: CSP and versions</b></summary>
+Always serves the newest `1.x` release, so you get fixes without redeploying. It won't jump to a future `2.x`: move to `/v2/checkout-button.js` yourself once that ships.
 
-No `integrity` attribute is possible here — the bytes change without notice as new `1.x` releases ship. Trust the origin via CSP instead:
+<details>
+<summary><b>CSP</b></summary>
+
+Allow the CDN origin in your Content Security Policy:
 
 ```
 Content-Security-Policy: script-src 'self' https://js.maytes.co;
 ```
 
-`/v1/` tracks the newest `1.x` release only; it won't jump to a future `2.x` (move to `/v2/checkout-button.js` explicitly once that ships). Poll `https://js.maytes.co/integrity.json` if you want to detect changes yourself.
-
-</details>
-
-<details>
-<summary><b>Pinned: SemVer or content hash, with SRI</b></summary>
-
-For a guarantee instead of convenience — freeze on a tested build, update on your own schedule:
-
-<!-- @cdn-example-start -->
-```html
-<script src="https://js.maytes.co/v1.2.0/checkout-button.js"
-        integrity="sha384-…"
-        crossorigin="anonymous"></script>
-```
-
-```html
-<script src="https://js.maytes.co/checkout-button.c640180e.js"
-        integrity="sha384-…"
-        crossorigin="anonymous"></script>
-```
-<!-- @cdn-example-end -->
-
-Both URLs are the same release bytes with the same SRI value — pick either. Full version/hash/SRI history: [`CHANGELOG.md`](./CHANGELOG.md), [releases](https://github.com/kttipay/maytes-checkout-button/releases), `https://js.maytes.co/integrity.json`. Pinned URLs never change once published.
+No `integrity` attribute is possible on this URL, because its bytes change as new `1.x` releases ship. Poll `https://js.maytes.co/integrity.json` if you want to detect changes yourself.
 
 </details>
 
@@ -118,7 +93,7 @@ Both URLs are the same release bytes with the same SRI value — pick either. Fu
 npm install @maytes/checkout-button
 ```
 
-ESM (`import`) and CommonJS (`require`) builds ship unminified with type declarations; your bundler minifies them. The reasoning behind the CDN channels is in [`docs/cdn-versioning.md`](./docs/cdn-versioning.md).
+ESM (`import`) and CommonJS (`require`) builds ship unminified with type declarations; your bundler minifies them.
 
 ## API
 
