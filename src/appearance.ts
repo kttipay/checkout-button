@@ -41,5 +41,8 @@ export function assertAppearance(options: Pick<RenderButtonOptions, 'radius' | '
 
 export function applyAppearance(button: HTMLButtonElement, appearance: ButtonAppearance): void {
   if (appearance.radius !== undefined) button.style.setProperty('--maytes-button-radius', `${appearance.radius}px`);
-  if (appearance.height !== undefined) button.style.setProperty('--maytes-button-height', `${appearance.height}px`);
+  if (appearance.height !== undefined) {
+    button.style.setProperty('--maytes-button-height', `${appearance.height}px`);
+    button.classList.add('maytes-checkout-button--sized');
+  }
 }

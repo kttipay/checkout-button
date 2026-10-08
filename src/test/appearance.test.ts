@@ -112,3 +112,50 @@ describe('renderButton radius and height', () => {
     expect(container.querySelector('button')).toBeNull();
   });
 });
+
+describe('default rendering stays as in 1.1', () => {
+  function injectedCss(): string {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    Maytes({ createCheckout: async () => ({ checkoutId: 'x' }), environment: 'sandbox' }).renderButton(host);
+    const css = [...document.head.querySelectorAll('style')].map((style) => style.textContent ?? '').join('\n');
+    host.remove();
+    return css;
+  }
+
+  function ruleBody(css: string, selector: string): string {
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const match = new RegExp(`${escaped}\\s*\\{([^}]*)\\}`).exec(css);
+    return match?.[1] ?? '';
+  }
+
+  it('keeps the base button rule free of white-space and box-sizing', () => {
+    const base = ruleBody(injectedCss(), '.maytes-checkout-button');
+    expect(base).not.toMatch(/white-space/);
+    expect(base).not.toMatch(/box-sizing/);
+    expect(base).toMatch(/border-radius:\s*var\(--maytes-button-radius,\s*999px\)/);
+  });
+
+  it('moves no-wrap and border-box into the sized modifier', () => {
+    const sized = ruleBody(injectedCss(), '.maytes-checkout-button--sized');
+    expect(sized).toMatch(/white-space:\s*nowrap/);
+    expect(sized).toMatch(/box-sizing:\s*border-box/);
+  });
+
+  it('adds the sized modifier only when a height is set', () => {
+    const maytes = Maytes({ createCheckout: async () => ({ checkoutId: 'x' }), environment: 'sandbox' });
+    const plain = document.createElement('div');
+    const rounded = document.createElement('div');
+    const sized = document.createElement('div');
+    document.body.append(plain, rounded, sized);
+    maytes.renderButton(plain);
+    maytes.renderButton(rounded, { radius: 6 });
+    maytes.renderButton(sized, { radius: 6, height: 48 });
+    expect(plain.querySelector('button')!.classList.contains('maytes-checkout-button--sized')).toBe(false);
+    expect(rounded.querySelector('button')!.classList.contains('maytes-checkout-button--sized')).toBe(false);
+    expect(sized.querySelector('button')!.classList.contains('maytes-checkout-button--sized')).toBe(true);
+    plain.remove();
+    rounded.remove();
+    sized.remove();
+  });
+});

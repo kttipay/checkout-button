@@ -18,7 +18,6 @@ const BUTTON_CSS = `
   align-items: center;
   justify-content: center;
   gap: 0.57em;
-  box-sizing: border-box;
   min-height: var(--maytes-button-height, auto);
   padding: 0.71em 1.29em;
   border: none;
@@ -29,7 +28,6 @@ const BUTTON_CSS = `
   font-size: var(--maytes-button-font-size, 14px);
   font-weight: 600;
   line-height: 1;
-  white-space: nowrap;
   cursor: pointer;
   user-select: none;
   transition: background-color 120ms ease, opacity 120ms ease;
@@ -42,6 +40,10 @@ const BUTTON_CSS = `
 .maytes-checkout-button[aria-disabled='true'] {
   cursor: progress;
   opacity: 0.7;
+}
+.maytes-checkout-button--sized {
+  box-sizing: border-box;
+  white-space: nowrap;
 }
 .maytes-checkout-button--block {
   display: flex;
