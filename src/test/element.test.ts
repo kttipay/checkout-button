@@ -240,5 +240,125 @@ describe('<maytes-checkout-button> rendering', () => {
     el.createCheckout = async () => ({ checkoutId: 'ck' });
     expect(sdkButton(el)!.getAttribute('aria-label')).toBe('Later Maytes');
   });
+  it('forwards only its own instance\'s events, bubbling and composed', async () => {
+    const one = element();
+    const two = element();
+    document.body.append(one, two);
+    one.createCheckout = async () => ({ checkoutId: 'one' });
+    two.createCheckout = async () => ({ checkoutId: 'two' });
+    const onOne = vi.fn();
+    const onTwo = vi.fn();
+    const onBody = vi.fn();
+    one.addEventListener('maytes-opened', onOne);
+    two.addEventListener('maytes-opened', onTwo);
+    document.body.addEventListener('maytes-opened', onBody);
+    sdkButton(one)!.click();
+    await vi.waitFor(() => expect(onOne).toHaveBeenCalledOnce());
+    const event = onOne.mock.calls[0]?.[0] as CustomEvent;
+    expect(event.detail).toEqual({ instanceId: one.instanceId, source: 'button' });
+    expect(event.bubbles).toBe(true);
+    expect(event.composed).toBe(true);
+    expect(onTwo).not.toHaveBeenCalled();
+    expect(onBody).toHaveBeenCalledOnce();
+    document.body.removeEventListener('maytes-opened', onBody);
+  });
+
+  it('forwards failed with the SDK detail', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const failed = vi.fn();
+    const el = element();
+    el.addEventListener('maytes-failed', failed);
+    document.body.appendChild(el);
+    el.createCheckout = async () => { throw new Error('down'); };
+    sdkButton(el)!.click();
+    await vi.waitFor(() => expect(failed).toHaveBeenCalledOnce());
+    expect((failed.mock.calls[0]?.[0] as CustomEvent).detail).toMatchObject({ reason: 'create-checkout-rejected', instanceId: el.instanceId, source: 'button' });
+  });
+
+  it('forwards closed when the customer closes the popup', async () => {
+    const closed = vi.fn();
+    const el = element();
+    el.addEventListener('maytes-closed', closed);
+    document.body.appendChild(el);
+    el.createCheckout = async () => ({ checkoutId: 'c' });
+    sdkButton(el)!.click();
+    await vi.waitFor(() => expect(popup.location.replace).toHaveBeenCalled());
+    popup.closed = true;
+    vi.advanceTimersByTime(550);
+    expect(closed).toHaveBeenCalledOnce();
+    expect((closed.mock.calls[0]?.[0] as CustomEvent).detail).toEqual({ instanceId: el.instanceId, source: 'button' });
+  });
+
+  it('forwards redirected with the target', async () => {
+    const redirected = vi.fn();
+    const el = element({ environment: 'sandbox', mode: 'redirect' });
+    el.addEventListener('maytes-redirected', redirected);
+    document.body.appendChild(el);
+    el.createCheckout = async () => ({ checkoutId: 'r' });
+    sdkButton(el)!.click();
+    await vi.waitFor(() => expect(redirected).toHaveBeenCalledOnce());
+    expect((redirected.mock.calls[0]?.[0] as CustomEvent).detail).toMatchObject({ target: 'self', instanceId: el.instanceId, source: 'button' });
+  });
+
+  it('open() starts the checkout from the merchant\'s own button and returns the result', async () => {
+    const opened = vi.fn();
+    const el = element();
+    el.addEventListener('maytes-opened', opened);
+    document.body.appendChild(el);
+    el.createCheckout = async () => ({ checkoutId: 'api' });
+    await expect(el.open()).resolves.toEqual({ outcome: 'popup' });
+    expect(popup.location.replace).toHaveBeenCalledWith('https://sandbox-checkout.maytes.co/?id=api');
+    expect((opened.mock.calls[0]?.[0] as CustomEvent).detail).toEqual({ instanceId: el.instanceId, source: 'api' });
+  });
+
+  it('open() before the element is ready is ignored, not an error', async () => {
+    const el = element();
+    await expect(el.open()).resolves.toEqual({ outcome: 'ignored' });
+    expect(openSpy).not.toHaveBeenCalled();
+  });
+
+  it('waits for an in-flight launch to end before re-creating the instance', async () => {
+    const launch = pending();
+    const el = element();
+    document.body.appendChild(el);
+    el.createCheckout = () => launch.promise;
+    const before = el.instanceId;
+    sdkButton(el)!.click();
+    el.setAttribute('environment', 'production');
+    expect(el.instanceId).toBe(before);
+    expect(popup.close).not.toHaveBeenCalled();
+    launch.resolve({ checkoutId: 'ck' });
+    await vi.waitFor(() => expect(popup.location.replace).toHaveBeenCalledWith('https://sandbox-checkout.maytes.co/?id=ck'));
+    popup.closed = true;
+    vi.advanceTimersByTime(550);
+    await vi.waitFor(() => expect(el.instanceId).not.toBe(before));
+    expect(el.instanceId).not.toBeNull();
+    expect(el.querySelectorAll('button').length).toBe(1);
+  });
+
+  it('keeps forwarding events after the instance is re-created', async () => {
+    const opened = vi.fn();
+    const el = element();
+    el.addEventListener('maytes-opened', opened);
+    document.body.appendChild(el);
+    el.createCheckout = async () => ({ checkoutId: 'ck' });
+    el.setAttribute('nonce', 'n2');
+    sdkButton(el)!.click();
+    await vi.waitFor(() => expect(opened).toHaveBeenCalledOnce());
+    expect((opened.mock.calls[0]?.[0] as CustomEvent).detail.instanceId).toBe(el.instanceId);
+  });
+
+  it('stops forwarding once disconnected', async () => {
+    const opened = vi.fn();
+    const el = element();
+    el.addEventListener('maytes-opened', opened);
+    document.body.appendChild(el);
+    el.createCheckout = async () => ({ checkoutId: 'ck' });
+    const instanceId = el.instanceId;
+    el.remove();
+    await Promise.resolve();
+    document.dispatchEvent(new CustomEvent('maytes:checkout-opened', { detail: { instanceId, source: 'button' } }));
+    expect(opened).not.toHaveBeenCalled();
+  });
 });
 

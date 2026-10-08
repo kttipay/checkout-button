@@ -1,9 +1,14 @@
 import { Maytes, MaytesError, MaytesErrorCode } from '@maytes/checkout-button';
 import type {
+  CheckoutClosedDetail,
   CheckoutFailedDetail,
+  CheckoutOpenedDetail,
+  CheckoutRedirectedDetail,
   CreateCheckoutFn,
   MaytesEnvironment,
   MaytesSDK,
+  OpenCheckoutOptions,
+  OpenCheckoutResult,
   RenderButtonCleanup,
   RenderButtonMode,
   RenderButtonOptions,
@@ -20,6 +25,17 @@ export type MaytesElementFailedDetail = CheckoutFailedDetail | ElementConfigFail
 
 const OBSERVED_ATTRIBUTES = ['environment', 'nonce', 'mode', 'label', 'block', 'radius', 'height'];
 const INSTANCE_ATTRIBUTES = new Set(['environment', 'nonce']);
+
+const FORWARDED_EVENTS = new Map<string, string>([
+  ['maytes:checkout-opened', 'maytes-opened'],
+  ['maytes:checkout-closed', 'maytes-closed'],
+  ['maytes:checkout-redirected', 'maytes-redirected'],
+  ['maytes:checkout-failed', 'maytes-failed'],
+]);
+
+const LAUNCH_ENDING_EVENTS = new Set(['maytes:checkout-closed', 'maytes:checkout-redirected', 'maytes:checkout-failed']);
+
+type SdkEventDetail = CheckoutOpenedDetail | CheckoutClosedDetail | CheckoutRedirectedDetail | CheckoutFailedDetail;
 
 const BaseElement = (typeof HTMLElement === 'undefined' ? class {} : HTMLElement) as typeof HTMLElement;
 
@@ -45,6 +61,9 @@ export class MaytesCheckoutButtonElement extends BaseElement {
   private checkoutCallback: CreateCheckoutFn | null = null;
   private maytes: MaytesSDK | null = null;
   private removeButton: RenderButtonCleanup | null = null;
+  private launching = false;
+  private recreatePending = false;
+  private listening = false;
 
   static get observedAttributes(): string[] {
     return OBSERVED_ATTRIBUTES;
@@ -61,6 +80,11 @@ export class MaytesCheckoutButtonElement extends BaseElement {
 
   get instanceId(): string | null {
     return this.maytes?.instanceId ?? null;
+  }
+
+  open(options?: OpenCheckoutOptions): Promise<OpenCheckoutResult> {
+    if (this.maytes === null) return Promise.resolve({ outcome: 'ignored' });
+    return this.maytes.openCheckout(options);
   }
 
   connectedCallback(): void {
@@ -103,6 +127,7 @@ export class MaytesCheckoutButtonElement extends BaseElement {
       return;
     }
     this.maytes = maytes;
+    this.listen();
     this.renderButton(maytes);
   }
 
@@ -119,8 +144,41 @@ export class MaytesCheckoutButtonElement extends BaseElement {
   }
 
   private recreateWhenIdle(): void {
+    if (this.launching) {
+      this.recreatePending = true;
+      return;
+    }
     this.unmount();
     this.mount();
+  }
+
+  private readonly forward = (event: Event): void => {
+    const maytes = this.maytes;
+    const name = FORWARDED_EVENTS.get(event.type);
+    if (maytes === null || name === undefined) return;
+    const detail = (event as CustomEvent<SdkEventDetail | undefined>).detail;
+    if (detail?.instanceId !== maytes.instanceId) return;
+    this.dispatchEvent(new CustomEvent(name, { detail, bubbles: true, composed: true }));
+    if (LAUNCH_ENDING_EVENTS.has(event.type)) this.launchEnded();
+  };
+
+  private launchEnded(): void {
+    this.launching = false;
+    if (!this.recreatePending) return;
+    this.recreatePending = false;
+    queueMicrotask(() => this.recreateWhenIdle());
+  }
+
+  private listen(): void {
+    if (this.listening) return;
+    this.listening = true;
+    for (const type of FORWARDED_EVENTS.keys()) document.addEventListener(type, this.forward);
+  }
+
+  private unlisten(): void {
+    if (!this.listening) return;
+    this.listening = false;
+    for (const type of FORWARDED_EVENTS.keys()) document.removeEventListener(type, this.forward);
   }
 
   private reportConfigError(error: unknown): void {
@@ -135,14 +193,18 @@ export class MaytesCheckoutButtonElement extends BaseElement {
     if (callback === null) {
       return Promise.reject(new MaytesError(MaytesErrorCode.Config, '<maytes-checkout-button> has no createCheckout'));
     }
+    this.launching = true;
     return callback();
   }
 
   private unmount(): void {
+    this.unlisten();
     this.removeButton?.();
     this.removeButton = null;
     this.maytes?.destroy();
     this.maytes = null;
+    this.launching = false;
+    this.recreatePending = false;
   }
 }
 
