@@ -64,6 +64,7 @@ export type OpenCheckoutResult =
 
 export interface MaytesSDK {
   renderButton(container: HTMLElement, options?: RenderButtonOptions): RenderButtonCleanup;
+  openCheckout(options?: OpenCheckoutOptions): Promise<OpenCheckoutResult>;
   redirectToCheckout(options: RedirectOptions): void;
   checkoutUrl(options: CheckoutUrlOptions): string;
   destroy(): void;

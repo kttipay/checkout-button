@@ -1,5 +1,5 @@
 import { renderButton } from './button.js';
-import { closePopupWindow, stopPopupPoll } from './launch.js';
+import { assertLaunchMode, closePopupWindow, launchCheckout, stopPopupPoll } from './launch.js';
 import { isValidEnvironment } from './env.js';
 import { MaytesError, MaytesErrorCode } from './errors.js';
 import { hideOverlay } from './overlay.js';
@@ -48,6 +48,12 @@ export const Maytes: MaytesFactory = (options, internal) => {
   const sdk: MaytesSDK = {
     renderButton(container, opts) {
       return renderButton(state, container, opts);
+    },
+    openCheckout(opts) {
+      if (state.destroyed) {
+        throw new MaytesError(MaytesErrorCode.Config, 'openCheckout() called on a destroyed Maytes instance');
+      }
+      return launchCheckout(state, assertLaunchMode(opts?.mode ?? 'popup', 'openCheckout'));
     },
     redirectToCheckout(opts) {
       redirectToCheckout(opts);
