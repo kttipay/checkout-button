@@ -69,6 +69,7 @@ jobs:
             dist/checkout-button.js dist/checkout-button.js.map \
             dist/checkout-button.mjs dist/checkout-button.mjs.map \
             dist/checkout-button.cjs dist/checkout-button.cjs.map \
+            dist/checkout-button.element.js dist/checkout-button.element.js.map \
             dist/integrity.json \
             --repo "${{ github.repository }}" --clobber
 
@@ -150,5 +151,6 @@ jobs:
             dist/checkout-button.js dist/checkout-button.js.map \
             dist/checkout-button.mjs dist/checkout-button.mjs.map \
             dist/checkout-button.cjs dist/checkout-button.cjs.map \
+            dist/checkout-button.element.js dist/checkout-button.element.js.map \
             dist/integrity.json \
             --repo "${{ github.repository }}" --clobber

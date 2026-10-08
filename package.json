@@ -22,7 +22,10 @@
     "button"
   ],
   "sideEffects": [
-    "./dist/checkout-button.js"
+    "./dist/checkout-button.js",
+    "./dist/checkout-button.element.js",
+    "./dist/element.mjs",
+    "./dist/element.cjs"
   ],
   "main": "./dist/checkout-button.cjs",
   "module": "./dist/checkout-button.mjs",
@@ -45,6 +48,15 @@
       },
       "import": "./dist/react.mjs",
       "require": "./dist/react.cjs"
+    },
+    "./element": {
+      "types": {
+        "import": "./dist/element.d.ts",
+        "require": "./dist/element.d.cts"
+      },
+      "import": "./dist/element.mjs",
+      "require": "./dist/element.cjs",
+      "default": "./dist/checkout-button.element.js"
     },
     "./browser": "./dist/checkout-button.js",
     "./package.json": "./package.json"
