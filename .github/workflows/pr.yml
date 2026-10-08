@@ -24,6 +24,22 @@ jobs:
       - run: npm run build
       - run: npm run audit
 
+  react-compat:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        react: ['18', '19']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm ci
+      - run: npm install --no-save react@${{ matrix.react }} react-dom@${{ matrix.react }}
+      - run: npx vitest run src/test/react-
+
   changeset:
     if: github.head_ref != 'changeset-release/main'
     runs-on: ubuntu-latest
