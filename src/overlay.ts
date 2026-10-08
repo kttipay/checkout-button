@@ -30,7 +30,9 @@ function ensureOverlayStylesInTopDocument(host: Document): void {
   host.head.appendChild(copy);
 }
 
-function buildOverlay(host: Document, state: InstanceState): HTMLDialogElement {
+export type OverlayVariant = 'popup' | 'redirect';
+
+function buildOverlay(host: Document, state: InstanceState, variant: OverlayVariant): HTMLDialogElement {
   const dialog = host.createElement('dialog');
   dialog.className = 'maytes-checkout-overlay';
   dialog.setAttribute('aria-labelledby', TITLE_ID);
@@ -54,21 +56,23 @@ function buildOverlay(host: Document, state: InstanceState): HTMLDialogElement {
   const text = host.createElement('p');
   text.id = TITLE_ID;
   text.className = 'maytes-checkout-overlay__text';
-  text.textContent = 'Completing checkout with Maytes…';
+  text.textContent = variant === 'popup' ? 'Completing checkout with Maytes…' : 'Taking you to Maytes…';
   content.appendChild(text);
 
-  const link = host.createElement('button');
-  link.className = 'maytes-checkout-overlay__link';
-  link.type = 'button';
-  link.textContent = 'Return to Maytes';
-  link.addEventListener('click', () => {
-    if (state.popupWindow !== null && !state.popupWindow.closed) {
-      try { state.popupWindow.focus(); } catch (err) {
-        if (!isSecurityError(err)) throw err;
+  if (variant === 'popup') {
+    const link = host.createElement('button');
+    link.className = 'maytes-checkout-overlay__link';
+    link.type = 'button';
+    link.textContent = 'Return to Maytes';
+    link.addEventListener('click', () => {
+      if (state.popupWindow !== null && !state.popupWindow.closed) {
+        try { state.popupWindow.focus(); } catch (err) {
+          if (!isSecurityError(err)) throw err;
+        }
       }
-    }
-  });
-  content.appendChild(link);
+    });
+    content.appendChild(link);
+  }
 
   dialog.appendChild(content);
 
@@ -85,11 +89,11 @@ function applyNativeBackdropFallback(dialog: HTMLDialogElement): void {
   dialog.style.background = NATIVE_BACKDROP_FALLBACK;
 }
 
-export function showOverlay(state: InstanceState): void {
+export function showOverlay(state: InstanceState, variant: OverlayVariant = 'popup'): void {
   if (state.overlayEl !== null) return;
   const host = resolveOverlayHost();
   ensureOverlayStylesInTopDocument(host);
-  const dialog = buildOverlay(host, state);
+  const dialog = buildOverlay(host, state, variant);
   state.overlayEl = dialog;
   host.body.appendChild(dialog);
   if (host !== document) detachOverlayWhenThisPageHides(state);

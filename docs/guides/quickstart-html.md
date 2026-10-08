@@ -26,4 +26,6 @@ You need an endpoint on your server that creates a Maytes checkout and returns `
 - Use `environment: 'sandbox'` with sandbox API credentials while you test, and `'production'` with production credentials when you go live.
 - `https://js.maytes.co/v1/checkout-button.js` always serves the newest `1.x` release. To freeze on a tested build with SRI, use a pinned URL from [Install and versioning](https://github.com/kttipay/maytes-checkout-button#install).
 
+Prefer a standard custom element? [`<maytes-checkout-button>`](https://github.com/kttipay/maytes-checkout-button/blob/main/docs/guides/web-component.md) works here too.
+
 Next: [API reference](https://github.com/kttipay/maytes-checkout-button/blob/main/docs/guides/api.md) · [Events](https://github.com/kttipay/maytes-checkout-button/blob/main/docs/guides/events.md) · [Troubleshooting](https://github.com/kttipay/maytes-checkout-button/blob/main/docs/guides/troubleshooting.md)

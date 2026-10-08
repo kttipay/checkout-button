@@ -27,6 +27,7 @@ export interface RenderButtonOptions {
   mode?: RenderButtonMode;
   radius?: number;
   height?: number;
+  redirectOverlay?: boolean;
 }
 
 export type RenderButtonCleanup = () => void;
@@ -65,6 +66,7 @@ export interface RedirectOptions extends CheckoutUrlOptions {
 
 export interface OpenCheckoutOptions {
   mode?: RenderButtonMode;
+  redirectOverlay?: boolean;
 }
 
 export type OpenCheckoutResult =
@@ -78,6 +80,7 @@ export interface MaytesSDK {
   readonly instanceId: string;
   renderButton(container: HTMLElement, options?: RenderButtonOptions): RenderButtonCleanup;
   openCheckout(options?: OpenCheckoutOptions): Promise<OpenCheckoutResult>;
+  onBusyChange(listener: (busy: boolean) => void): () => void;
   redirectToCheckout(options: RedirectOptions): void;
   checkoutUrl(options: CheckoutUrlOptions): string;
   destroy(): void;

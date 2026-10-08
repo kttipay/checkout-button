@@ -150,3 +150,13 @@ describe('rulesetNeedsUpdate', () => {
     expect(rulesetNeedsUpdate(staleBypass)).toBe(true);
   });
 });
+
+describe('the element bundle on the CDN', () => {
+  it('treats the unhashed element bundle as mutable and its hashed copy as an immutable pin', () => {
+    expect(matchesImmutablePinRule('/checkout-button.element.js')).toBe(false);
+    expect(matchesImmutablePinRule('/checkout-button.element.js.map')).toBe(false);
+    expect(matchesImmutablePinRule('/checkout-button.element.1234abcd.js')).toBe(true);
+    expect(wildcardMatches(SEMVER_PIN_WILDCARD, '/v1.3.0/checkout-button.element.js')).toBe(true);
+    expect(wildcardMatches(EVERGREEN_WILDCARD, '/v1/checkout-button.element.js')).toBe(true);
+  });
+});

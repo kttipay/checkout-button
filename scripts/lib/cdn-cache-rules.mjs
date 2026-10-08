@@ -15,6 +15,8 @@ export const UNHASHED_BUNDLE_PATHS = [
   '/checkout-button.cjs.map',
   '/checkout-button.d.ts',
   '/checkout-button.d.cts',
+  '/checkout-button.element.js',
+  '/checkout-button.element.js.map',
 ];
 
 function scopedToHost(expression) {

@@ -51,4 +51,6 @@ export class SplitWithMaytesComponent implements AfterViewInit, OnDestroy {
 - The `isPlatformBrowser` check keeps the button out of server-side rendering; without SSR it is always true.
 - `this.cartId` is read when the shopper clicks, so it is always the latest value.
 
+Prefer a standard custom element? [`<maytes-checkout-button>`](https://github.com/kttipay/maytes-checkout-button/blob/main/docs/guides/web-component.md) works here too.
+
 Next: [API reference](https://github.com/kttipay/maytes-checkout-button/blob/main/docs/guides/api.md) · [Troubleshooting](https://github.com/kttipay/maytes-checkout-button/blob/main/docs/guides/troubleshooting.md)

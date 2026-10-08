@@ -15,6 +15,7 @@ const targets = [
   { src: 'checkout-button.js', kind: 'iife' },
   { src: 'checkout-button.mjs', kind: 'esm' },
   { src: 'checkout-button.cjs', kind: 'cjs' },
+  { src: 'checkout-button.element.js', kind: 'iife-element' },
 ];
 
 const integrity = { version: pkg.version, builtAt: new Date().toISOString(), files: {} };
@@ -74,7 +75,7 @@ const changelogPath = resolve(sdkRoot, 'CHANGELOG.md');
 const existingChangelog = existsSync(changelogPath) ? readFileSync(changelogPath, 'utf8') : null;
 
 {
-  const bundleNames = ['checkout-button.js', 'checkout-button.mjs', 'checkout-button.cjs'];
+  const bundleNames = ['checkout-button.js', 'checkout-button.mjs', 'checkout-button.cjs', 'checkout-button.element.js'];
   const iife = integrity.files[bundleNames[0]];
   const linkLine = (sourceName, url, label = sourceName) => `- [${label}](${url})`;
 
@@ -87,6 +88,7 @@ const existingChangelog = existsSync(changelogPath) ? readFileSync(changelogPath
     `checkout-button.js   ${iife.sri}`,
     `checkout-button.mjs  ${integrity.files['checkout-button.mjs'].sri}`,
     `checkout-button.cjs  ${integrity.files['checkout-button.cjs'].sri}`,
+    `checkout-button.element.js  ${integrity.files['checkout-button.element.js'].sri}`,
     '```',
     '',
     '**SemVer CDN links** (readable production pins; use with the SRI hashes above):',
