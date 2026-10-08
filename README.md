@@ -35,6 +35,7 @@ The button sits on your checkout page. When a shopper clicks it, it asks your se
 - [Install](#install)
 - [API](#api)
 - [All guides](#all-guides)
+- [Using an AI coding assistant](#using-an-ai-coding-assistant)
 - [Mobile app](#mobile-app)
 - [Development](#development)
 
@@ -164,6 +165,19 @@ Full reference: [API](docs/guides/api.md) · [Events](docs/guides/events.md).
 - **Internals:** [Technical overview](docs/overview.md) · [CDN versioning decision record](docs/cdn-versioning.md)
 
 The same guides ship in the npm package under `docs/guides/` and are published on [developers.maytes.co](https://developers.maytes.co/checkout-button).
+
+## Using an AI coding assistant
+
+This repository ships an [Agent Skill](https://github.com/kttipay/maytes-checkout-button/tree/main/skills/maytes-checkout-button) that teaches coding assistants to add Split with Maytes correctly on any stack: credentials stay on your server, `createCheckout` returns `{ checkoutId, checkoutUrl }`, the button is created in browser-only code and destroyed on unmount, and the webhook captures the payment.
+
+In Claude Code:
+
+```
+/plugin marketplace add kttipay/maytes-checkout-button
+/plugin install maytes-checkout-button@maytes
+```
+
+Then ask, for example, "add Split with Maytes to my checkout". Other assistants that support Agent Skills can use the [`skills/maytes-checkout-button`](https://github.com/kttipay/maytes-checkout-button/tree/main/skills/maytes-checkout-button) folder directly. The skill covers only the released API.
 
 ## Mobile app
 
