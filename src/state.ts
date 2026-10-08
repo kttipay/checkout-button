@@ -7,6 +7,7 @@ export interface InstanceState {
   instanceId: string;
   overlayEl: HTMLDialogElement | null;
   overlayDetach: (() => void) | null;
+  restoreDetach: (() => void) | null;
   popupWindow: Window | null;
   popupNavigated: boolean;
   popupName: string;
@@ -47,6 +48,7 @@ export function createInstanceState(
     instanceId: randomId(),
     overlayEl: null,
     overlayDetach: null,
+    restoreDetach: null,
     popupWindow: null,
     popupNavigated: false,
     popupName: `maytes-checkout-${randomId()}`,

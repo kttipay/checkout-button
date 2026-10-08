@@ -1,7 +1,7 @@
 import { applyAppearance, assertAppearance } from './appearance.js';
 import { buildMaytesLogo } from './branding.js';
 import { MaytesError, MaytesErrorCode } from './errors.js';
-import { assertLaunchMode, launchCheckout } from './launch.js';
+import { assertLaunchMode, assertRedirectOverlay, launchCheckout } from './launch.js';
 import { ensureStylesInjected, releaseStyles } from './styles.js';
 import type { InstanceState } from './state.js';
 import type { RenderButtonCleanup, RenderButtonOptions } from './types.js';
@@ -38,6 +38,7 @@ export function renderButton(
   }
 
   const appearance = assertAppearance(options);
+  const redirectOverlay = assertRedirectOverlay(options.redirectOverlay);
 
   ensureStylesInjected(state.config.cspNonce);
 
@@ -84,7 +85,7 @@ export function renderButton(
   const handleClick = (): void => {
     if (state.busy || state.destroyed) return;
     launchedHere = true;
-    void launchCheckout(state, mode, 'button');
+    void launchCheckout(state, mode, 'button', redirectOverlay);
   };
 
   button.addEventListener('click', handleClick);
