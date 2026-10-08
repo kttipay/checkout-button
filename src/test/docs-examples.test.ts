@@ -17,7 +17,7 @@ const USES_REACT_BINDINGS = /@maytes\/checkout-button\/react/;
 const REACT_ENTRY = join(ROOT, 'src', 'react', 'index.ts');
 const REACT_GLOBALS = `
 declare function showMessage(text: string): void;
-declare function createCheckoutOnYourServer(cartId: string): Promise<{ checkoutId: string; checkoutUrl?: string }>;
+declare function createMaytesCheckout(cartId: string): Promise<{ checkoutId: string; checkoutUrl?: string }>;
 declare function payWithStripe(): void;
 `;
 const CHECKED_LANGUAGES: Record<string, 'ts' | 'tsx' | 'js'> = {
