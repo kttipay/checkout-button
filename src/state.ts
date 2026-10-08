@@ -4,6 +4,7 @@ export interface InstanceState {
   config: MaytesOptions & MaytesInternalOptions;
   busy: boolean;
   busyViews: Set<(busy: boolean) => void>;
+  instanceId: string;
   overlayEl: HTMLDialogElement | null;
   overlayDetach: (() => void) | null;
   popupWindow: Window | null;
@@ -14,19 +15,19 @@ export interface InstanceState {
   teardowns: Set<() => void>;
 }
 
-function popupNameSuffix(): string {
+function randomSuffix(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
 
-function generatePopupName(): string {
+function randomId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     try {
-      return `maytes-checkout-${crypto.randomUUID()}`;
+      return crypto.randomUUID();
     } catch {
-      return `maytes-checkout-${popupNameSuffix()}`;
+      return randomSuffix();
     }
   }
-  return `maytes-checkout-${popupNameSuffix()}`;
+  return randomSuffix();
 }
 
 export function createInstanceState(
@@ -43,11 +44,12 @@ export function createInstanceState(
     config,
     busy: false,
     busyViews: new Set(),
+    instanceId: randomId(),
     overlayEl: null,
     overlayDetach: null,
     popupWindow: null,
     popupNavigated: false,
-    popupName: generatePopupName(),
+    popupName: `maytes-checkout-${randomId()}`,
     popupPollHandle: null,
     destroyed: false,
     teardowns: new Set(),

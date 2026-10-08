@@ -25,20 +25,32 @@ export interface RenderButtonOptions {
   label?: string;
   block?: boolean;
   mode?: RenderButtonMode;
+  radius?: number;
+  height?: number;
 }
 
 export type RenderButtonCleanup = () => void;
 
 export type RedirectTarget = 'self' | 'top' | 'tab';
 
-export interface CheckoutRedirectedDetail {
+export type LaunchSource = 'button' | 'api';
+
+export interface CheckoutEventDetail {
+  instanceId: string;
+  source: LaunchSource;
+}
+
+export type CheckoutOpenedDetail = CheckoutEventDetail;
+export type CheckoutClosedDetail = CheckoutEventDetail;
+
+export interface CheckoutRedirectedDetail extends CheckoutEventDetail {
   url: string;
   target: RedirectTarget;
 }
 
 export type CheckoutFailedReason = 'create-checkout-rejected' | 'invalid-shape' | 'navigation-blocked';
 
-export interface CheckoutFailedDetail {
+export interface CheckoutFailedDetail extends CheckoutEventDetail {
   reason: CheckoutFailedReason;
   cause?: unknown;
 }
@@ -63,6 +75,7 @@ export type OpenCheckoutResult =
   | { outcome: 'ignored' };
 
 export interface MaytesSDK {
+  readonly instanceId: string;
   renderButton(container: HTMLElement, options?: RenderButtonOptions): RenderButtonCleanup;
   openCheckout(options?: OpenCheckoutOptions): Promise<OpenCheckoutResult>;
   redirectToCheckout(options: RedirectOptions): void;
@@ -78,6 +91,13 @@ export type MaytesFactory = (
 export type { MaytesErrorCodeValue };
 
 declare global {
+  interface DocumentEventMap {
+    'maytes:checkout-opened': CustomEvent<CheckoutOpenedDetail>;
+    'maytes:checkout-closed': CustomEvent<CheckoutClosedDetail>;
+    'maytes:checkout-redirected': CustomEvent<CheckoutRedirectedDetail>;
+    'maytes:checkout-failed': CustomEvent<CheckoutFailedDetail>;
+  }
+
   interface Window {
     Maytes: MaytesFactory;
   }

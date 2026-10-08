@@ -18,9 +18,10 @@ const BUTTON_CSS = `
   align-items: center;
   justify-content: center;
   gap: 0.57em;
+  min-height: var(--maytes-button-height, auto);
   padding: 0.71em 1.29em;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--maytes-button-radius, 999px);
   background: ${foundation.brand.primary};
   color: ${foundation.text.primaryInverse};
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -39,6 +40,10 @@ const BUTTON_CSS = `
 .maytes-checkout-button[aria-disabled='true'] {
   cursor: progress;
   opacity: 0.7;
+}
+.maytes-checkout-button--sized {
+  box-sizing: border-box;
+  white-space: nowrap;
 }
 .maytes-checkout-button--block {
   display: flex;

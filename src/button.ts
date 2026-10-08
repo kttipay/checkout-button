@@ -1,3 +1,4 @@
+import { applyAppearance, assertAppearance } from './appearance.js';
 import { buildMaytesLogo } from './branding.js';
 import { MaytesError, MaytesErrorCode } from './errors.js';
 import { assertLaunchMode, launchCheckout } from './launch.js';
@@ -36,6 +37,8 @@ export function renderButton(
     throw new MaytesError(MaytesErrorCode.Config, 'renderButton(container) requires an HTMLElement');
   }
 
+  const appearance = assertAppearance(options);
+
   ensureStylesInjected(state.config.cspNonce);
 
   const label = options.label ?? 'Split with';
@@ -47,6 +50,7 @@ export function renderButton(
   button.className = block
     ? 'maytes-checkout-button maytes-checkout-button--block'
     : 'maytes-checkout-button';
+  applyAppearance(button, appearance);
   button.setAttribute('aria-label', `${label} Maytes`);
 
   const labelNode = document.createTextNode(`${label} `);
@@ -80,7 +84,7 @@ export function renderButton(
   const handleClick = (): void => {
     if (state.busy || state.destroyed) return;
     launchedHere = true;
-    void launchCheckout(state, mode);
+    void launchCheckout(state, mode, 'button');
   };
 
   button.addEventListener('click', handleClick);

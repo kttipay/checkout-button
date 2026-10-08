@@ -7,8 +7,11 @@ import { buildCheckoutUrl, isHttpUrl } from './redirect.js';
 import { POPUP_LOADING_CSS } from './styles.js';
 import type { InstanceState } from './state.js';
 import type {
+  CheckoutEventDetail,
+  CheckoutFailedDetail,
   CheckoutFailedReason,
   CheckoutRedirectedDetail,
+  LaunchSource,
   OpenCheckoutResult,
   RedirectTarget,
   RenderButtonMode,
@@ -132,14 +135,17 @@ function paintPopupLoadingScreen(popup: Window, cspNonce: string | undefined): v
   setTimeout(() => { slow.hidden = false; }, SLOW_NETWORK_DELAY_MS);
 }
 
-function dispatchFailed(reason: CheckoutFailedReason, cause?: unknown): void {
-  document.dispatchEvent(new CustomEvent('maytes:checkout-failed', {
-    detail: cause === undefined ? { reason } : { reason, cause },
-  }));
+function eventDetail(state: InstanceState, source: LaunchSource): CheckoutEventDetail {
+  return { instanceId: state.instanceId, source };
 }
 
-function dispatchRedirected(url: string, target: RedirectTarget): void {
-  const detail: CheckoutRedirectedDetail = { url, target };
+function dispatchFailed(origin: CheckoutEventDetail, reason: CheckoutFailedReason, cause?: unknown): void {
+  const detail: CheckoutFailedDetail = cause === undefined ? { ...origin, reason } : { ...origin, reason, cause };
+  document.dispatchEvent(new CustomEvent('maytes:checkout-failed', { detail }));
+}
+
+function dispatchRedirected(origin: CheckoutEventDetail, url: string, target: RedirectTarget): void {
+  const detail: CheckoutRedirectedDetail = { ...origin, url, target };
   document.dispatchEvent(new CustomEvent('maytes:checkout-redirected', { detail }));
 }
 
@@ -167,19 +173,19 @@ function closeOrphanPopup(state: InstanceState, popup: Window | null): void {
   endLaunch(state);
 }
 
-function navigateAway(state: InstanceState, url: string): OpenCheckoutResult {
+function navigateAway(state: InstanceState, origin: CheckoutEventDetail, url: string): OpenCheckoutResult {
   const navigation = navigateTopLevel(url, false);
   endLaunch(state);
   if (navigation.target === null) {
     console.error('[maytes/checkout-button] could not leave the embedding frame:', navigation.cause);
-    dispatchFailed('navigation-blocked', navigation.cause);
+    dispatchFailed(origin, 'navigation-blocked', navigation.cause);
     return { outcome: 'failed', reason: 'navigation-blocked' };
   }
-  dispatchRedirected(url, navigation.target);
+  dispatchRedirected(origin, url, navigation.target);
   return { outcome: 'redirected', target: navigation.target };
 }
 
-function openPopupLoader(state: InstanceState): Window | null {
+function openPopupLoader(state: InstanceState, origin: CheckoutEventDetail): Window | null {
   const popup = openBlankPopup(state);
   if (popup === null) return null;
   state.popupWindow = popup;
@@ -187,19 +193,24 @@ function openPopupLoader(state: InstanceState): Window | null {
   refocusPopup(popup);
   paintPopupLoadingScreen(popup, state.config.cspNonce);
   showOverlay(state);
-  document.dispatchEvent(new CustomEvent('maytes:checkout-opened'));
+  document.dispatchEvent(new CustomEvent('maytes:checkout-opened', { detail: origin }));
   startPopupPoll(state, () => {
     endLaunch(state);
-    document.dispatchEvent(new CustomEvent('maytes:checkout-closed'));
+    document.dispatchEvent(new CustomEvent('maytes:checkout-closed', { detail: origin }));
   });
   return popup;
 }
 
-export async function launchCheckout(state: InstanceState, mode: RenderButtonMode): Promise<OpenCheckoutResult> {
+export async function launchCheckout(
+  state: InstanceState,
+  mode: RenderButtonMode,
+  source: LaunchSource,
+): Promise<OpenCheckoutResult> {
   if (state.busy || state.destroyed) return { outcome: 'ignored' };
   setInstanceBusy(state, true);
+  const origin = eventDetail(state, source);
   const shouldUsePopup = mode === 'popup' && !isMobileViewport();
-  const popup = shouldUsePopup ? openPopupLoader(state) : null;
+  const popup = shouldUsePopup ? openPopupLoader(state, origin) : null;
   try {
     const result = await state.config.createCheckout();
     if (state.destroyed || (popup !== null && popup.closed)) {
@@ -213,7 +224,7 @@ export async function launchCheckout(state: InstanceState, mode: RenderButtonMod
         'createCheckout must resolve to { checkoutId: string, checkoutUrl?: http(s) URL }',
       );
       console.error(shapeError);
-      dispatchFailed('invalid-shape', shapeError);
+      dispatchFailed(origin, 'invalid-shape', shapeError);
       return { outcome: 'failed', reason: 'invalid-shape' };
     }
     const url = result.checkoutUrl ?? buildCheckoutUrl(
@@ -229,12 +240,12 @@ export async function launchCheckout(state: InstanceState, mode: RenderButtonMod
     if (shouldUsePopup) {
       console.warn('[maytes/checkout-button] popup was blocked; redirecting instead');
     }
-    return navigateAway(state, url);
+    return navigateAway(state, origin, url);
   } catch (err) {
     if (popup !== null && popup.closed) return { outcome: 'closed' };
     closeOrphanPopup(state, popup);
     console.error('[maytes/checkout-button] createCheckout failed:', err);
-    dispatchFailed('create-checkout-rejected', err);
+    dispatchFailed(origin, 'create-checkout-rejected', err);
     return { outcome: 'failed', reason: 'create-checkout-rejected' };
   }
 }

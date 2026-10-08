@@ -212,6 +212,8 @@ describe('maytes.renderButton', () => {
     expect((redirected.mock.calls[0]?.[0] as CustomEvent).detail).toEqual({
       url: 'https://sandbox-checkout.maytes.co/?id=blk',
       target: 'self',
+      instanceId: expect.any(String),
+      source: 'button',
     });
     expect(failed).not.toHaveBeenCalled();
     document.removeEventListener('maytes:checkout-redirected', redirected);
@@ -931,7 +933,7 @@ describe('maytes.renderButton', () => {
     expect(topHref).toHaveBeenCalledWith('https://sandbox-checkout.maytes.co/?id=frm');
     expect(assignSpy).not.toHaveBeenCalled();
     expect(openSpy).not.toHaveBeenCalled();
-    expect(detailOf(redirected)).toEqual({ url: 'https://sandbox-checkout.maytes.co/?id=frm', target: 'top' });
+    expect(detailOf(redirected)).toEqual({ url: 'https://sandbox-checkout.maytes.co/?id=frm', target: 'top', instanceId: expect.any(String), source: 'button' });
     document.removeEventListener('maytes:checkout-redirected', redirected);
   });
 
@@ -962,7 +964,7 @@ describe('maytes.renderButton', () => {
     }));
     expect(topHref).toHaveBeenCalledWith('https://sandbox-checkout.maytes.co/?id=x');
     expect(assignSpy).not.toHaveBeenCalled();
-    expect(detailOf(redirected)).toEqual({ url: 'https://sandbox-checkout.maytes.co/?id=x', target: 'top' });
+    expect(detailOf(redirected)).toEqual({ url: 'https://sandbox-checkout.maytes.co/?id=x', target: 'top', instanceId: expect.any(String), source: 'button' });
     document.removeEventListener('maytes:checkout-redirected', redirected);
   });
 
@@ -980,7 +982,7 @@ describe('maytes.renderButton', () => {
     }));
     expect(openSpy).toHaveBeenCalledWith('https://sandbox-checkout.maytes.co/?id=x', '_blank');
     expect(tab.opener).toBeNull();
-    expect(detailOf(redirected)).toEqual({ url: 'https://sandbox-checkout.maytes.co/?id=x', target: 'tab' });
+    expect(detailOf(redirected)).toEqual({ url: 'https://sandbox-checkout.maytes.co/?id=x', target: 'tab', instanceId: expect.any(String), source: 'button' });
     expect(failed).not.toHaveBeenCalled();
     document.removeEventListener('maytes:checkout-redirected', redirected);
     document.removeEventListener('maytes:checkout-failed', failed);
@@ -999,7 +1001,7 @@ describe('maytes.renderButton', () => {
       container.querySelector('button')!.click();
       await vi.waitFor(() => expect(failed).toHaveBeenCalled());
     }));
-    expect(detailOf(failed)).toEqual({ reason: 'navigation-blocked', cause: blocked });
+    expect(detailOf(failed)).toEqual({ reason: 'navigation-blocked', cause: blocked, instanceId: expect.any(String), source: 'button' });
     expect(redirected).not.toHaveBeenCalled();
     expect(assignSpy).not.toHaveBeenCalled();
     expect(container.querySelector('button')!.getAttribute('aria-disabled')).toBeNull();
