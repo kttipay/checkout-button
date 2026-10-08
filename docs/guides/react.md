@@ -62,7 +62,7 @@ export function Checkout({ cartId }: { cartId: string }) {
 }
 ```
 
-`MaytesButton` takes the same options as `renderButton()` (`mode`, `label`, `block`, `radius`, `height`) plus `onOpened`, `onClosed`, `onRedirected` and `onFailed`. The callbacks fire only for launches started by a `MaytesButton` under the same provider.
+`MaytesButton` takes the same options as `renderButton()` (`mode`, `label`, `block`, `radius`, `height`, `redirectOverlay`) plus `onOpened`, `onClosed`, `onRedirected` and `onFailed`. The callbacks fire only for launches started by a `MaytesButton` under the same provider.
 
 From your own button, for example a Stripe Payment Element where Split with Maytes is a custom payment method:
 
