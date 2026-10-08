@@ -55,7 +55,7 @@ import { MaytesProvider, MaytesButton } from '@maytes/checkout-button/react';
 
 export function Checkout({ cartId }: { cartId: string }) {
   return (
-    <MaytesProvider environment="sandbox" createCheckout={() => createCheckoutOnYourServer(cartId)}>
+    <MaytesProvider environment="sandbox" createCheckout={() => createMaytesCheckout(cartId)}>
       <MaytesButton block mode="popup" onFailed={(detail) => showMessage(detail.reason)} />
     </MaytesProvider>
   );
