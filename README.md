@@ -165,7 +165,7 @@ The same guides ship in the npm package under `docs/guides/` and are published o
 
 ## Using an AI coding assistant
 
-🤖 This repository ships an [Agent Skill](https://github.com/kttipay/maytes-checkout-button/tree/main/skills/maytes-checkout-button) that teaches coding assistants to add Split with Maytes correctly on any stack: credentials stay on your server, `createCheckout` returns `{ checkoutId, checkoutUrl }`, the button is created in browser-only code and destroyed on unmount, and the webhook captures the payment.
+This repository ships an [Agent Skill](https://github.com/kttipay/maytes-checkout-button/tree/main/skills/maytes-checkout-button) that teaches coding assistants to add Split with Maytes correctly on any stack: credentials stay on your server, `createCheckout` returns `{ checkoutId, checkoutUrl }`, the button is created in browser-only code and destroyed on unmount, and the webhook captures the payment.
 
 In Claude Code:
 
