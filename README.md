@@ -60,30 +60,8 @@ Your server creates the checkout behind `POST /api/maytes/checkout`; [Your serve
 
 ## Choose your setup
 
-<table width="100%">
-  <tr><th colspan="3" align="left">Frontend</th></tr>
-  <tr>
-    <td align="center" width="33%"><a href="docs/guides/quickstart-html.md"><img src="docs/assets/stacks/html.svg" width="36" height="36" alt=""><br><b>HTML</b></a></td>
-    <td align="center" width="33%"><a href="docs/guides/quickstart-npm.md"><img src="docs/assets/stacks/npm.svg" width="36" height="36" alt=""><br><b>npm</b></a></td>
-    <td align="center" width="33%"><a href="docs/guides/react.md"><img src="docs/assets/stacks/react.svg" width="36" height="36" alt=""><br><b>React</b></a></td>
-  </tr>
-  <tr>
-    <td align="center" width="33%"><a href="docs/guides/nextjs.md"><img src="docs/assets/stacks/next.svg" width="36" height="36" alt=""><br><b>Next.js</b></a></td>
-    <td align="center" width="33%"><a href="docs/guides/vue-nuxt.md"><img src="docs/assets/stacks/vue.svg" width="36" height="36" alt=""><br><b>Vue · Nuxt</b></a></td>
-    <td align="center" width="33%"><a href="docs/guides/angular.md"><img src="docs/assets/stacks/angular.svg" width="36" height="36" alt=""><br><b>Angular</b></a></td>
-  </tr>
-  <tr>
-    <td align="center" width="33%"><a href="docs/guides/svelte.md"><img src="docs/assets/stacks/svelte.svg" width="36" height="36" alt=""><br><b>Svelte</b></a></td>
-    <td align="center" width="33%"><a href="docs/guides/solid.md"><img src="docs/assets/stacks/solid.svg" width="36" height="36" alt=""><br><b>Solid</b></a></td>
-    <td align="center" width="33%"><a href="docs/guides/web-component.md"><img src="docs/assets/stacks/element.svg" width="36" height="36" alt=""><br><b>Web component</b></a></td>
-  </tr>
-  <tr><th colspan="3" align="left">Integration</th></tr>
-  <tr>
-    <td align="center" width="33%"><a href="docs/guides/server.md"><img src="docs/assets/stacks/server.svg" width="36" height="36" alt=""><br><b>Your server</b></a></td>
-    <td align="center" width="33%"><a href="docs/guides/stripe-payment-element.md"><img src="docs/assets/stacks/stripe.svg" width="36" height="36" alt=""><br><b>Stripe Payment Element</b></a></td>
-    <td align="center" width="33%"><a href="docs/guides/own-button.md"><img src="docs/assets/stacks/own-button.svg" width="36" height="36" alt=""><br><b>Your own button</b></a></td>
-  </tr>
-</table>
+- **Frontend:** [HTML](docs/guides/quickstart-html.md) · [npm](docs/guides/quickstart-npm.md) · [React](docs/guides/react.md) · [Next.js](docs/guides/nextjs.md) · [Vue and Nuxt](docs/guides/vue-nuxt.md) · [Angular](docs/guides/angular.md) · [Svelte](docs/guides/svelte.md) · [Solid](docs/guides/solid.md) · [Web component](docs/guides/web-component.md)
+- **Integration:** [Your server](docs/guides/server.md) · [Stripe Payment Element](docs/guides/stripe-payment-element.md) · [Your own button](docs/guides/own-button.md)
 
 ## Install
 
@@ -177,15 +155,11 @@ Style the button from CSS with `--maytes-button-height`, `--maytes-button-radius
 
 Full reference: [API](docs/guides/api.md) · [Events](docs/guides/events.md).
 
-## All guides
+## More guides
 
-| | |
-|---|---|
-| 🚀 **Get started** | [plain HTML](docs/guides/quickstart-html.md) · [npm with a bundler](docs/guides/quickstart-npm.md) · [React](docs/guides/react.md) · [Next.js](docs/guides/nextjs.md) · [Vue 3 and Nuxt 3](docs/guides/vue-nuxt.md) · [Angular](docs/guides/angular.md) · [Svelte and SvelteKit](docs/guides/svelte.md) · [Solid](docs/guides/solid.md) · [Web component](docs/guides/web-component.md) |
-| 💳 **Server and payments** | [Your server](docs/guides/server.md) · [With Stripe's Payment Element](docs/guides/stripe-payment-element.md) · [Using your own button](docs/guides/own-button.md) |
-| 📚 **Reference** | [API](docs/guides/api.md) · [Events](docs/guides/events.md) · [Popup, redirect and iframes](docs/guides/launch-behaviour.md) · [Security and CSP](docs/guides/security-csp.md) |
-| 🛟 **Help** | [Troubleshooting](docs/guides/troubleshooting.md) |
-| 🔧 **Internals** | [Technical overview](docs/overview.md) · [CDN versioning decision record](docs/cdn-versioning.md) |
+- **Reference:** [API](docs/guides/api.md) · [Events](docs/guides/events.md) · [Popup, redirect and iframes](docs/guides/launch-behaviour.md) · [Security and CSP](docs/guides/security-csp.md)
+- **Help:** [Troubleshooting](docs/guides/troubleshooting.md)
+- **Internals:** [Technical overview](docs/overview.md) · [CDN versioning decision record](docs/cdn-versioning.md)
 
 The same guides ship in the npm package under `docs/guides/` and are published on [developers.maytes.co](https://developers.maytes.co/checkout-button).
 
