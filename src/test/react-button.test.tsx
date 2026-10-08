@@ -51,6 +51,36 @@ describe('MaytesButton', () => {
     expect(button.style.getPropertyValue('--maytes-button-height')).toBe('48px');
   });
 
+  it('passes redirectOverlay through, so a same-tab launch shows the Maytes overlay', async () => {
+    let finishCreate!: () => void;
+    const slowCreate = () => new Promise<{ checkoutId: string }>((resolve) => { finishCreate = () => resolve({ checkoutId: 'c-1' }); });
+    const { container } = render(
+      <MaytesProvider environment="sandbox" createCheckout={slowCreate}>
+        <MaytesButton mode="redirect" redirectOverlay />
+      </MaytesProvider>,
+    );
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>('button.maytes-checkout-button')!.click();
+    });
+    expect(document.querySelector('[data-maytes-overlay]')).not.toBeNull();
+    await act(async () => finishCreate());
+  });
+
+  it('shows no overlay on a same-tab launch without redirectOverlay, as before', async () => {
+    let finishCreate!: () => void;
+    const slowCreate = () => new Promise<{ checkoutId: string }>((resolve) => { finishCreate = () => resolve({ checkoutId: 'c-1' }); });
+    const { container } = render(
+      <MaytesProvider environment="sandbox" createCheckout={slowCreate}>
+        <MaytesButton mode="redirect" />
+      </MaytesProvider>,
+    );
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>('button.maytes-checkout-button')!.click();
+    });
+    expect(document.querySelector('[data-maytes-overlay]')).toBeNull();
+    await act(async () => finishCreate());
+  });
+
   it('re-renders on option changes without leaving a second button', () => {
     const { container, rerender } = render(
       <MaytesProvider environment="sandbox" createCheckout={failing}><MaytesButton label="Split with" /></MaytesProvider>,
