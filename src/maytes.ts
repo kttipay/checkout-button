@@ -56,6 +56,15 @@ export const Maytes: MaytesFactory = (options, internal) => {
       }
       return launchCheckout(state, assertLaunchMode(opts?.mode ?? 'popup', 'openCheckout'), 'api');
     },
+    onBusyChange(listener) {
+      if (state.destroyed) {
+        throw new MaytesError(MaytesErrorCode.Config, 'onBusyChange() called on a destroyed Maytes instance');
+      }
+      state.busyViews.add(listener);
+      return () => {
+        state.busyViews.delete(listener);
+      };
+    },
     redirectToCheckout(opts) {
       redirectToCheckout(opts);
     },
