@@ -20,6 +20,7 @@ An optional second argument, `{ cspNonce }`, sets a nonce on the styles the SDK 
 | Method | Returns | Description |
 |---|---|---|
 | `renderButton(container, options?)` | `() => void` | Renders the button into `container` (an `HTMLElement`) and returns a function that removes it. |
+| `openCheckout({ mode? })` | `Promise<OpenCheckoutResult>` | Starts the checkout from your own button, exactly as a click on the rendered button does. Call it inside your click handler, before any `await`. Resolves with how the launch ended and never rejects. See [Using your own button](https://github.com/kttipay/maytes-checkout-button/blob/main/docs/guides/own-button.md). |
 | `redirectToCheckout({ checkoutId, replace? })` | `void` | Sends the current tab to a checkout you already created, without a button. `replace: true` replaces the history entry. Inside an iframe it navigates the top-level window and throws `MaytesError` if the browser refuses. |
 | `checkoutUrl({ checkoutId })` | `string` | Builds the hosted checkout URL for a checkout you already created. |
 | `destroy()` | `void` | Tears down the instance: buttons, listeners, the overlay and a popup that hasn't loaded yet. Idempotent. |
@@ -34,7 +35,7 @@ Call `destroy()` when the page or component goes away, or when you need an insta
 | `block` | `boolean` | `false` | `true` makes the button fill the width of its container. |
 | `mode` | `'popup' \| 'redirect'` | `'popup'` | `'popup'` opens a centred window on desktop and falls back to the same tab on phones or when the popup is blocked. `'redirect'` always uses the same tab. |
 
-Two buttons rendered from one instance share one checkout at a time: clicks are ignored while that instance's `createCheckout` is running.
+Two buttons rendered from one instance share one checkout at a time: clicks and `openCheckout()` are ignored while that instance's `createCheckout` is running.
 
 ## Examples
 

@@ -63,6 +63,7 @@ The button handles steps 1 and 3. Steps 2 and 4 are your server: see [Your serve
 | Svelte or SvelteKit | [Svelte and SvelteKit](docs/guides/svelte.md) |
 | Solid or SolidStart | [Solid](docs/guides/solid.md) |
 | Stripe's Payment Element | [With Stripe's Payment Element](docs/guides/stripe-payment-element.md) |
+| Your own Pay button (Stripe, an express-checkout row, …) | [Using your own button](docs/guides/own-button.md) |
 | Your backend, in any language | [Your server](docs/guides/server.md) |
 
 Every guide is self-contained: the install step, a copy-paste example and what to read next.
@@ -143,6 +144,7 @@ maytes.renderButton(document.getElementById('maytes-button')!, { block: true });
 |---|---|
 | `Maytes({ createCheckout, environment })` | Creates an instance. `createCheckout` asks your server for `{ checkoutId, checkoutUrl? }`; `environment` is `'sandbox'` or `'production'`. |
 | `renderButton(container, { label, block, mode })` | Renders the button and returns a function that removes it. `mode` is `'popup'` (default) or `'redirect'`. |
+| `openCheckout({ mode })` | Starts the checkout from your own button, as a click on the rendered button does. See [Using your own button](docs/guides/own-button.md). |
 | `redirectToCheckout({ checkoutId, replace })` | Sends the current tab to a checkout you already created. |
 | `checkoutUrl({ checkoutId })` | Builds the hosted checkout URL. |
 | `destroy()` | Tears down the instance, its buttons, listeners and overlay. Call it on unmount. |
@@ -153,7 +155,7 @@ Full reference: [API](docs/guides/api.md) · [Events](docs/guides/events.md).
 ## All guides
 
 - **Get started:** [plain HTML](docs/guides/quickstart-html.md) · [npm with a bundler](docs/guides/quickstart-npm.md) · [React](docs/guides/react.md) · [Next.js](docs/guides/nextjs.md) · [Vue 3 and Nuxt 3](docs/guides/vue-nuxt.md) · [Angular](docs/guides/angular.md) · [Svelte and SvelteKit](docs/guides/svelte.md) · [Solid](docs/guides/solid.md)
-- **Server and payments:** [Your server](docs/guides/server.md) · [With Stripe's Payment Element](docs/guides/stripe-payment-element.md)
+- **Server and payments:** [Your server](docs/guides/server.md) · [With Stripe's Payment Element](docs/guides/stripe-payment-element.md) · [Using your own button](docs/guides/own-button.md)
 - **Reference:** [API](docs/guides/api.md) · [Events](docs/guides/events.md) · [Popup, redirect and iframes](docs/guides/launch-behaviour.md) · [Security and CSP](docs/guides/security-csp.md)
 - **Help:** [Troubleshooting](docs/guides/troubleshooting.md)
 - **Internals:** [Technical overview](docs/overview.md) · [CDN versioning decision record](docs/cdn-versioning.md)

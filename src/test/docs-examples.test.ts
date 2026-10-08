@@ -25,6 +25,9 @@ const CHECKED_LANGUAGES: Record<string, 'ts' | 'tsx' | 'js'> = {
 
 const FRAMEWORK_STUBS = `
 declare function showMessage(text: string): void;
+declare const paymentElement: { on(event: 'change', handler: (event: { value: { type: string } }) => void): void };
+declare const payButton: HTMLButtonElement;
+declare const MAYTES_CPM_ID: string;
 declare const createCheckout: () => Promise<{ checkoutId: string; checkoutUrl?: string }>;
 declare const process: { env: Record<string, string | undefined> };
 declare function defineProps<T>(): T;
@@ -161,7 +164,7 @@ describe('documentation examples', () => {
   it('finds the SDK examples in the README and every guide that has one', () => {
     const sources = new Set(snippets.map((snippet) => snippet.source));
     expect(snippets.length).toBeGreaterThanOrEqual(11);
-    for (const guide of ['quickstart-npm.md', 'react.md', 'nextjs.md', 'vue-nuxt.md', 'angular.md', 'svelte.md', 'solid.md', 'api.md', 'events.md', 'security-csp.md']) {
+    for (const guide of ['quickstart-npm.md', 'react.md', 'nextjs.md', 'vue-nuxt.md', 'angular.md', 'svelte.md', 'solid.md', 'api.md', 'events.md', 'security-csp.md', 'own-button.md']) {
       expect(sources.has(`docs/guides/${guide}`), `${guide} has a type-checked example`).toBe(true);
     }
     expect(sources.has('README.md')).toBe(true);
