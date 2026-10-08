@@ -6,10 +6,10 @@ The button reports what happened with `CustomEvent`s on `document`. Use them for
 
 | Event | When | `event.detail` |
 |---|---|---|
-| `maytes:checkout-opened` | The popup opened. | — |
-| `maytes:checkout-closed` | The popup was closed while your page was still open, usually by the shopper. (When the checkout finishes, it sends your page to your `return_url` instead.) | — |
-| `maytes:checkout-redirected` | The checkout opened without a popup. | `{ url, target }`, where `target` is `'self'` (this tab), `'top'` (the page around your iframe) or `'tab'` (a new tab) |
-| `maytes:checkout-failed` | The checkout could not open. | `{ reason, cause? }`, where `reason` is `'create-checkout-rejected'`, `'invalid-shape'` or `'navigation-blocked'` |
+| `maytes:checkout-opened` | The popup opened. | `{ instanceId, source }` |
+| `maytes:checkout-closed` | The popup was closed while your page was still open, usually by the shopper. (When the checkout finishes, it sends your page to your `return_url` instead.) | `{ instanceId, source }` |
+| `maytes:checkout-redirected` | The checkout opened without a popup. | `{ url, target, instanceId, source }`, where `target` is `'self'` (this tab), `'top'` (the page around your iframe) or `'tab'` (a new tab) |
+| `maytes:checkout-failed` | The checkout could not open. | `{ reason, cause?, instanceId, source }`, where `reason` is `'create-checkout-rejected'`, `'invalid-shape'` or `'navigation-blocked'` |
 
 ```ts
 import type { CheckoutFailedDetail, CheckoutRedirectedDetail } from '@maytes/checkout-button';
@@ -24,6 +24,19 @@ document.addEventListener('maytes:checkout-failed', (event) => {
 document.addEventListener('maytes:checkout-redirected', (event) => {
   const { target } = (event as CustomEvent<CheckoutRedirectedDetail>).detail;
   if (target === 'tab') showMessage('Split with Maytes opened in a new tab.');
+});
+```
+
+Every `detail` also carries `instanceId`, the id of the instance that sent it (`maytes.instanceId`), and `source`: `'button'` for a click on a rendered button, `'api'` for `openCheckout()`. With several instances on one page, filter by id:
+
+```ts
+import { Maytes } from '@maytes/checkout-button';
+
+const maytes = Maytes({ createCheckout, environment: 'sandbox' });
+
+document.addEventListener('maytes:checkout-closed', (event) => {
+  if (event.detail.instanceId !== maytes.instanceId) return;
+  showMessage('Split with Maytes was closed.');
 });
 ```
 

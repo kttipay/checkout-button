@@ -143,8 +143,9 @@ maytes.renderButton(document.getElementById('maytes-button')!, { block: true });
 | Member | Purpose |
 |---|---|
 | `Maytes({ createCheckout, environment })` | Creates an instance. `createCheckout` asks your server for `{ checkoutId, checkoutUrl? }`; `environment` is `'sandbox'` or `'production'`. |
-| `renderButton(container, { label, block, mode })` | Renders the button and returns a function that removes it. `mode` is `'popup'` (default) or `'redirect'`. |
+| `renderButton(container, { label, block, mode, radius, height })` | Renders the button and returns a function that removes it. `mode` is `'popup'` (default) or `'redirect'`; `radius` and `height` fit it next to wallet buttons. |
 | `openCheckout({ mode })` | Starts the checkout from your own button, as a click on the rendered button does. See [Using your own button](docs/guides/own-button.md). |
+| `instanceId` | Read-only id of the instance; every `maytes:checkout-*` event carries it in `event.detail`. |
 | `redirectToCheckout({ checkoutId, replace })` | Sends the current tab to a checkout you already created. |
 | `checkoutUrl({ checkoutId })` | Builds the hosted checkout URL. |
 | `destroy()` | Tears down the instance, its buttons, listeners and overlay. Call it on unmount. |
