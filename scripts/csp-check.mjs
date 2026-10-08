@@ -6,7 +6,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const sdkRoot = resolve(here, '..');
 const dist = resolve(sdkRoot, 'dist');
 
-const targets = ['checkout-button.js', 'checkout-button.mjs', 'checkout-button.cjs'];
+const targets = ['checkout-button.js', 'checkout-button.mjs', 'checkout-button.cjs', 'react.mjs', 'react.cjs'];
 
 const FORBIDDEN = [
   { name: 'eval(', pattern: /\beval\s*\(/g, why: 'CSP: violates script-src; opens code-injection vectors.' },

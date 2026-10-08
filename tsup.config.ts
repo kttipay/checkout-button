@@ -25,4 +25,17 @@ export default defineConfig([
     dts: true,
     outExtension: ({ format }) => ({ js: format === 'esm' ? '.mjs' : '.cjs' }),
   },
+  {
+    entry: { react: 'src/react/index.ts' },
+    format: ['esm', 'cjs'],
+    target: 'es2020',
+    platform: 'browser',
+    sourcemap: true,
+    minify: false,
+    clean: false,
+    dts: true,
+    external: ['react', 'react/jsx-runtime', '@maytes/checkout-button'],
+    banner: { js: '"use client";' },
+    outExtension: ({ format }) => ({ js: format === 'esm' ? '.mjs' : '.cjs' }),
+  },
 ]);
