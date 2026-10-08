@@ -61,27 +61,29 @@ Your server creates the checkout behind `POST /api/maytes/checkout`; [Your serve
 ## Choose your setup
 
 <table>
+  <tr><th colspan="3" align="left">Frontend</th></tr>
   <tr>
-    <td align="center" valign="top"><a href="docs/guides/quickstart-html.md"><img src="docs/assets/stacks/html.svg" width="44" height="44" alt=""><br><b>Plain HTML</b></a><br><sub>PHP, Rails, Django, Laravel, WordPress, …</sub></td>
-    <td align="center" valign="top"><a href="docs/guides/quickstart-npm.md"><img src="docs/assets/stacks/npm.svg" width="44" height="44" alt=""><br><b>npm + bundler</b></a><br><sub>Vite, webpack, esbuild, no framework</sub></td>
-    <td align="center" valign="top"><a href="docs/guides/react.md"><img src="docs/assets/stacks/react.svg" width="44" height="44" alt=""><br><b>React</b></a><br><sub>Vite, CRA, Remix · <code>/react</code> components</sub></td>
-    <td align="center" valign="top"><a href="docs/guides/nextjs.md"><img src="docs/assets/stacks/next.svg" width="44" height="44" alt=""><br><b>Next.js</b></a><br><sub>App Router client component</sub></td>
+    <td align="center" width="33%"><a href="docs/guides/quickstart-html.md"><img src="docs/assets/stacks/html.svg" width="36" height="36" alt=""><br><b>HTML</b></a></td>
+    <td align="center" width="33%"><a href="docs/guides/quickstart-npm.md"><img src="docs/assets/stacks/npm.svg" width="36" height="36" alt=""><br><b>npm</b></a></td>
+    <td align="center" width="33%"><a href="docs/guides/react.md"><img src="docs/assets/stacks/react.svg" width="36" height="36" alt=""><br><b>React</b></a></td>
   </tr>
   <tr>
-    <td align="center" valign="top"><a href="docs/guides/vue-nuxt.md"><img src="docs/assets/stacks/vue.svg" width="44" height="44" alt=""><br><b>Vue 3 · Nuxt 3</b></a></td>
-    <td align="center" valign="top"><a href="docs/guides/angular.md"><img src="docs/assets/stacks/angular.svg" width="44" height="44" alt=""><br><b>Angular</b></a></td>
-    <td align="center" valign="top"><a href="docs/guides/svelte.md"><img src="docs/assets/stacks/svelte.svg" width="44" height="44" alt=""><br><b>Svelte · SvelteKit</b></a></td>
-    <td align="center" valign="top"><a href="docs/guides/solid.md"><img src="docs/assets/stacks/solid.svg" width="44" height="44" alt=""><br><b>Solid · SolidStart</b></a></td>
+    <td align="center" width="33%"><a href="docs/guides/nextjs.md"><img src="docs/assets/stacks/next.svg" width="36" height="36" alt=""><br><b>Next.js</b></a></td>
+    <td align="center" width="33%"><a href="docs/guides/vue-nuxt.md"><img src="docs/assets/stacks/vue.svg" width="36" height="36" alt=""><br><b>Vue · Nuxt</b></a></td>
+    <td align="center" width="33%"><a href="docs/guides/angular.md"><img src="docs/assets/stacks/angular.svg" width="36" height="36" alt=""><br><b>Angular</b></a></td>
   </tr>
   <tr>
-    <td align="center" valign="top"><a href="docs/guides/web-component.md"><img src="docs/assets/stacks/element.svg" width="44" height="44" alt=""><br><b>Web component</b></a><br><sub><code>&lt;maytes-checkout-button&gt;</code> for any framework</sub></td>
-    <td align="center" valign="top"><a href="docs/guides/stripe-payment-element.md"><img src="docs/assets/stacks/stripe.svg" width="44" height="44" alt=""><br><b>Stripe Payment Element</b></a></td>
-    <td align="center" valign="top"><a href="docs/guides/own-button.md"><img src="docs/assets/stacks/own-button.svg" width="44" height="44" alt=""><br><b>Your own button</b></a><br><sub>A Pay button, an express-checkout row, …</sub></td>
-    <td align="center" valign="top"><a href="docs/guides/server.md"><img src="docs/assets/stacks/server.svg" width="44" height="44" alt=""><br><b>Your server</b></a><br><sub>Your backend, in any language</sub></td>
+    <td align="center" width="33%"><a href="docs/guides/svelte.md"><img src="docs/assets/stacks/svelte.svg" width="36" height="36" alt=""><br><b>Svelte</b></a></td>
+    <td align="center" width="33%"><a href="docs/guides/solid.md"><img src="docs/assets/stacks/solid.svg" width="36" height="36" alt=""><br><b>Solid</b></a></td>
+    <td align="center" width="33%"><a href="docs/guides/web-component.md"><img src="docs/assets/stacks/element.svg" width="36" height="36" alt=""><br><b>Web component</b></a></td>
+  </tr>
+  <tr><th colspan="3" align="left">Integration</th></tr>
+  <tr>
+    <td align="center" width="33%"><a href="docs/guides/server.md"><img src="docs/assets/stacks/server.svg" width="36" height="36" alt=""><br><b>Your server</b></a></td>
+    <td align="center" width="33%"><a href="docs/guides/stripe-payment-element.md"><img src="docs/assets/stacks/stripe.svg" width="36" height="36" alt=""><br><b>Stripe Payment Element</b></a></td>
+    <td align="center" width="33%"><a href="docs/guides/own-button.md"><img src="docs/assets/stacks/own-button.svg" width="36" height="36" alt=""><br><b>Your own button</b></a></td>
   </tr>
 </table>
-
-Every guide is self-contained: the install step, a copy-paste example and what to read next.
 
 ## Install
 
