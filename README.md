@@ -33,6 +33,7 @@ Renders a button and launches the Maytes-hosted checkout in the top-level window
 - [Install](#install)
 - [Usage](#usage)
 - [API](#api)
+- [Using your own button](#using-your-own-button)
 - [Mobile app](#mobile-app)
 - [Development](#development)
 
@@ -124,13 +125,50 @@ Via the script tag, the same factory is available as the global `window.Maytes(.
 |---|---|
 | `Maytes(options)` | Create an SDK instance. `options.createCheckout` mints a checkout server-side; `options.environment` selects the Maytes environment. |
 | `renderButton(container, options?)` | Render the button into `container`; returns a cleanup function. Options include `label`, `block`, and `mode: 'redirect' \| 'popup'` (default `'popup'`). |
-| `redirectToCheckout(options)` | Launch checkout directly (no button). |
+| `openCheckout(options?)` | Start the checkout from your own button, exactly as a click on the rendered button does. Call it inside your click handler. Option: `mode: 'redirect' \| 'popup'` (default `'popup'`). Resolves with how the launch ended; never rejects. |
+| `redirectToCheckout(options)` | Send the current tab to a checkout you have already created (no popup). |
 | `checkoutUrl(options)` | Build the hosted checkout URL. |
 | `destroy()` | Tear down the instance and its listeners — call this on unmount or when the instance's config/environment changes, not as a reaction to detecting payment success from your own polling (that can tear down a checkout that's still in progress). To remove a single button, use the cleanup function returned by `renderButton()` or hide/disable the button element instead. |
 
 ### Inside an iframe?
 
 The hosted checkout must run in the top-level window (its session cookie is refused inside a cross-site frame). If you render the button inside an iframe, the SDK navigates the top-level window; if the browser refuses, it opens a new tab; if both are refused it dispatches `maytes:checkout-failed` with `reason: 'navigation-blocked'`. When the checkout opens in a new tab, no popup poll starts and no `maytes:checkout-opened` / `maytes:checkout-closed` pair fires — you'll only see `maytes:checkout-redirected` with `target: 'tab'`. A sandboxed iframe needs `allow-scripts allow-same-origin allow-top-navigation` (plus `allow-popups allow-popups-to-escape-sandbox` for the tab fallback). Listen to `maytes:checkout-redirected` and read `event.detail.target` (`'self'`, `'top'` or `'tab'`) if your page needs to know where the checkout went. Rendering the button in the top-level page avoids all of this.
+
+## Using your own button
+
+If your page already has its own Pay button — for example a Stripe Payment Element checkout that offers **Split with Maytes** as a Stripe custom payment method — start Maytes from that button with `openCheckout()`:
+
+```ts
+const maytes = Maytes({ createCheckout, environment: 'sandbox' });
+
+let maytesSelected = false;
+paymentElement.on('change', (event) => {
+  maytesSelected = event.value.type === MAYTES_CPM_ID;
+});
+
+payButton.addEventListener('click', async () => {
+  if (maytesSelected) {
+    const result = await maytes.openCheckout();
+    if (result.outcome === 'failed') showError('Could not start Split with Maytes. Please try again.');
+    return;
+  }
+  // ... your normal card flow
+});
+```
+
+**Call `openCheckout()` inside the click handler, before any `await`.** Browsers only allow a popup straight from a click: the SDK opens the window during the call and creates the checkout afterwards. Called later, the popup may be blocked; the SDK then redirects instead, so the payment still works.
+
+`openCheckout()` resolves with how the launch ended:
+
+| `outcome` | Meaning |
+|---|---|
+| `popup` | The popup loaded the Maytes checkout. |
+| `redirected` | The page (or the top window, or a new tab: `target`) went to the Maytes checkout. |
+| `failed` | `createCheckout` failed or returned the wrong shape, or every way out of an iframe was refused (`reason`, same as `maytes:checkout-failed`). |
+| `closed` | The customer closed the popup before the checkout loaded. |
+| `ignored` | A checkout launch from this instance was already in flight. |
+
+It never rejects. It throws `MaytesError` (`CONFIG`) synchronously on a destroyed instance or an invalid `mode`. Buttons rendered by the same instance ignore clicks while any launch is in flight.
 
 ## Mobile app
 

@@ -77,3 +77,14 @@ describe('createInstanceState config passthrough', () => {
     expect(state.teardowns).toEqual(new Set());
   });
 });
+
+describe('createInstanceState busy views', () => {
+  it('starts with no busy views, so no button reacts before one is rendered', () => {
+    const state = createInstanceState(
+      { createCheckout: async () => ({ checkoutId: 'x' }), environment: 'sandbox' },
+      undefined,
+    );
+    expect(state.busy).toBe(false);
+    expect(state.busyViews.size).toBe(0);
+  });
+});

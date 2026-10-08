@@ -51,8 +51,20 @@ export interface RedirectOptions extends CheckoutUrlOptions {
   replace?: boolean;
 }
 
+export interface OpenCheckoutOptions {
+  mode?: RenderButtonMode;
+}
+
+export type OpenCheckoutResult =
+  | { outcome: 'popup' }
+  | { outcome: 'redirected'; target: RedirectTarget }
+  | { outcome: 'failed'; reason: CheckoutFailedReason }
+  | { outcome: 'closed' }
+  | { outcome: 'ignored' };
+
 export interface MaytesSDK {
   renderButton(container: HTMLElement, options?: RenderButtonOptions): RenderButtonCleanup;
+  openCheckout(options?: OpenCheckoutOptions): Promise<OpenCheckoutResult>;
   redirectToCheckout(options: RedirectOptions): void;
   checkoutUrl(options: CheckoutUrlOptions): string;
   destroy(): void;

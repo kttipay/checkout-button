@@ -67,8 +67,20 @@ interface RenderButtonOptions {
 // Factory — each call returns an isolated instance:
 const maytes = Maytes(options: MaytesOptions, internal?: MaytesInternalOptions): MaytesSDK;
 
+interface OpenCheckoutOptions {
+  mode?: RenderButtonMode;  // default: 'popup', same launch rules as the button
+}
+
+type OpenCheckoutResult =
+  | { outcome: 'popup' }
+  | { outcome: 'redirected'; target: 'self' | 'top' | 'tab' }
+  | { outcome: 'failed'; reason: 'create-checkout-rejected' | 'invalid-shape' | 'navigation-blocked' }
+  | { outcome: 'closed' }    // customer closed the popup before the checkout loaded
+  | { outcome: 'ignored' };  // a launch from this instance was already in flight
+
 interface MaytesSDK {
   renderButton(container: HTMLElement, options?: RenderButtonOptions): () => void;
+  openCheckout(options?: OpenCheckoutOptions): Promise<OpenCheckoutResult>;
   redirectToCheckout(options: { checkoutId: string; replace?: boolean }): void;
   checkoutUrl(options: { checkoutId: string }): string;
   destroy(): void;
@@ -76,6 +88,8 @@ interface MaytesSDK {
 ```
 
 `window.Maytes(opts)` reads like `window.Stripe(key)`. The IIFE build attaches the factory as `window.Maytes`; the ESM/CJS builds export `{ Maytes }`.
+
+`openCheckout` runs the button's launch from the merchant's own button (for example a Stripe Payment Element checkout): it opens the blank popup synchronously during the call, so it must be called inside a click handler before any `await`. It reports how the launch ended, never the payment result.
 
 `redirectToCheckout` / `checkoutUrl` are the headless path for power users and internal tooling (no button). `destroy()` tears down the instance — popup poll, any open popup, overlay, buttons, and listeners — in one shot and is idempotent; React cleanup is just `() => maytes.destroy()`.
 
@@ -153,7 +167,10 @@ production → https://checkout.maytes.co
 | `renderButton(container)` where container isn't an `HTMLElement` | `MaytesError(CONFIG)` |
 | `renderButton()` on a destroyed instance | `MaytesError(CONFIG)` |
 | `mode` not `'redirect' \| 'popup'` | `MaytesError(CONFIG)` |
-| Click while this instance's `createCheckout` is in flight | No-op. A per-instance busy flag gates the instance's buttons. |
+| Click while this instance's `createCheckout` is in flight | No-op. A per-instance busy flag gates the instance's buttons and `openCheckout()`. Only the clicked button shows the spinner. |
+| `openCheckout()` while a launch is in flight | Resolves `{ outcome: 'ignored' }`; `createCheckout` is not called again. |
+| `openCheckout()` on a destroyed instance, or with an invalid `mode` | Throws `MaytesError(CONFIG)` synchronously. |
+| `openCheckout()` outcomes | Same flow as a click; resolves `popup`, `redirected` (`target`), `failed` (`reason`), or `closed` (popup closed before the checkout loaded). Never rejects. |
 | `createCheckout` rejects | Button re-enables, overlay clears, `console.error`, `maytes:checkout-failed` (reason `create-checkout-rejected`). |
 | `createCheckout` resolves the wrong shape | Same as rejection, reason `invalid-shape`. |
 | Default mode (`popup`) on a wide viewport | Blank popup opened synchronously, branded loader painted, then `popup.location.replace(url)`; `maytes:checkout-opened`. The width is the top window's (or the screen's when the top is cross-origin), never the iframe's. |
@@ -180,7 +197,8 @@ src/
 ├── index.ts        # public re-exports; attaches window.Maytes (IIFE only)
 ├── maytes.ts       # Maytes() factory — option validation, builds the MaytesSDK instance
 ├── state.ts        # createInstanceState — per-instance state (config, busy, popup, overlay, buttons)
-├── button.ts       # renderButton() — DOM building, click handler, popup launch, busy gate
+├── button.ts       # renderButton() — DOM building, option validation, busy view; click → launchCheckout()
+├── launch.ts       # launchCheckout() — popup loader, overlay, createCheckout, navigation, events, launch result; shared by the button and openCheckout()
 ├── redirect.ts     # checkoutUrl + redirectToCheckout (URL build + nav)
 ├── framing.ts      # isFramed / sameOriginTop / viewportWidth / navigateTopLevel (leave an embedding iframe)
 ├── env.ts          # isValidEnvironment, resolveBaseUrl (env → URL)
@@ -218,6 +236,7 @@ Coverage — **251 tests across 18 files** (`src/test/`):
 |---|---|---|
 | `init.test.ts` | 10 | factory validation (`createCheckout` type, `environment` enum), internal `baseUrl` passthrough |
 | `button.test.ts` | 74 | render → click → closure → default popup launch (`about:blank` sync open, branded loader, `location.replace` navigation), explicit redirect mode, phone redirect fallback, blocked-popup redirect event, unique per-instance window name, busy gating, double-click suppression, destroy-mid-flight guard, listener detach on destroy, versioned style marker, immediate overlay clear on Escape, rejection / invalid-shape recovery, env → URL mapping, `baseUrl` override, popup-closed polling + overlay teardown, `maytes:checkout-*` events, cleanup/`destroy` idempotency, style refcounting, `cspNonce` presence/absence, `label` / `block` / `mode` props, multi-button concurrency, framed navigation (same-origin top window on a phone, popup sizing from the top window, cross-origin top window allowing navigation, a refused top navigation opening a new tab, both refused failing loudly and re-enabling the button), the busy spinner reappearing on every checkout attempt, not just the first |
+| `open-checkout.test.ts` | 18 | `openCheckout()`: blank popup opened during the call before `createCheckout`, popup navigation and `opened` event, `checkoutUrl` passthrough, phone and `redirect`-mode redirects, blocked-popup fallback, `failed` for rejection / invalid shape / refused iframe navigation (never rejects), `ignored` while a launch is in flight, CONFIG for a destroyed instance or invalid mode, `closed` when destroyed or the popup is closed before the checkout loads; one busy state per instance shared with rendered buttons |
 | `framing.test.ts` | 10 | `isFramed` / `sameOriginTop` / `viewportWidth` at top level and when framed, falling back to the screen width when the top window is cross-origin (and to the local width when the screen width is unknown), `navigateTopLevel` targeting the top window, opening a tab with `opener` severed when the top window refuses, reporting the refusal when both are blocked, rethrowing failures that aren't a `SecurityError`, recognising a `SecurityError` thrown from another realm as a top-window refusal or as a cross-origin top window |
 | `env.test.ts` | 24 | `isValidEnvironment` (positive, negative and non-string values via `it.each`, type-guard narrowing), `resolveBaseUrl` (sandbox / staging / production mapping, override precedence, empty-string override, defence-in-depth throw on unknown env) |
 | `state.test.ts` | 7 | popup-name generation (`crypto.randomUUID` + fallback), `createInstanceState` config passthrough and defaults |

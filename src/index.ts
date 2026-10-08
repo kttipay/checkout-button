@@ -18,6 +18,8 @@ export type {
   MaytesInternalOptions,
   MaytesOptions,
   MaytesSDK,
+  OpenCheckoutOptions,
+  OpenCheckoutResult,
   RedirectOptions,
   RedirectTarget,
   RenderButtonCleanup,

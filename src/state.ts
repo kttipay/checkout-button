@@ -3,6 +3,7 @@ import type { MaytesOptions, MaytesInternalOptions } from './types.js';
 export interface InstanceState {
   config: MaytesOptions & MaytesInternalOptions;
   busy: boolean;
+  busyViews: Set<(busy: boolean) => void>;
   overlayEl: HTMLDialogElement | null;
   overlayDetach: (() => void) | null;
   popupWindow: Window | null;
@@ -41,6 +42,7 @@ export function createInstanceState(
   return {
     config,
     busy: false,
+    busyViews: new Set(),
     overlayEl: null,
     overlayDetach: null,
     popupWindow: null,
